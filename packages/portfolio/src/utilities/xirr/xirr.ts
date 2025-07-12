@@ -44,7 +44,7 @@ const calculateAnnualizedReturns = (
   }
 
   // convert the transactions to cashflows, then sort the cashflows by date in ascending order
-  const cashflows: CashFlow[] = convertTransactions(type, transactions);
+  const cashflows: CashFlow[] = generateCashflows(type, transactions);
   if (finalShareCount > TOLERANCE) {
     const item = quoteItem as QuoteItem;
     cashflows.push({
@@ -131,7 +131,7 @@ const calculateAnnualizedReturns = (
   return rate;
 };
 
-const convertTransactions = (
+const generateCashflows = (
   evalType: "net" | "gross",
   transactions: Transaction[]
 ): CashFlow[] =>

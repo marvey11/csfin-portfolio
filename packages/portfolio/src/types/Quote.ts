@@ -1,11 +1,11 @@
+import { getDateObject } from "../utilities";
+
 class QuoteItem {
   private date: Date;
   private price: number;
 
-  constructor(date: string, price: number);
-  constructor(date: Date, price: number);
   constructor(date: string | Date, price: number) {
-    this.date = typeof date === "string" ? new Date(date) : date;
+    this.date = getDateObject(date);
     this.price = price;
   }
 

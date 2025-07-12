@@ -133,8 +133,7 @@ class PortfolioPosition {
   /**
    * The profit (or loss) realised from shares in this position that have been previously sold off.
    *
-   * @param type The type of evaluation, can be `gross` (fees or taxes are not considered in \
-   *             evaluation) or `net` (taking fees and taxes into account).
+   * @param type The type of evaluation, can be `gross` (fees or taxes are not considered in evaluation) or `net` (taking fees and taxes into account).
    * @returns The absolute gains (profit or loss) that have been realised.
    */
   getRealizedGains(type: "net" | "gross"): number {
