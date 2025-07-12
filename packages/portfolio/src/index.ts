@@ -1,4 +1,11 @@
-import { Portfolio, Security, StockExchange, Transaction } from "./types";
+import {
+  Portfolio,
+  QuoteItem,
+  Security,
+  StockExchange,
+  Transaction,
+} from "./types";
+import { calculateAnnualizedReturns } from "./utilities";
 
 const portfolio = new Portfolio();
 
@@ -46,3 +53,12 @@ portfolio.addTransaction(
 );
 
 console.log(portfolio.toString());
+
+const transactions = portfolio.getTransactions("NL0010273215");
+const quote: QuoteItem = new QuoteItem("2025-07-11", 683.9);
+
+const xirrGross = calculateAnnualizedReturns("gross", transactions, quote);
+console.log(`= XIRR (Gross): ${(100 * xirrGross).toFixed(2)}%`);
+
+const xirrNet = calculateAnnualizedReturns("net", transactions, quote);
+console.log(`= XIRR (Net): ${(100 * xirrNet).toFixed(2)}%`);

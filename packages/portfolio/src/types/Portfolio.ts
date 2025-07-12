@@ -2,7 +2,7 @@ import { Security } from "./Security";
 import { Transaction } from "./Transaction";
 
 /** Threshold for floating-point comparison */
-const FLOAT_THRESHOLD = 1e-6;
+const TOLERANCE = 1e-6;
 
 // Use "en-GB" locale to avoid the number formar from "de-DE" locale,
 // but still use the EUR for the currency.
@@ -45,27 +45,28 @@ class PortfolioPosition {
     this.accumulatedFeesAndTaxes = 0;
   }
 
+  getTransactions(): Transaction[] {
+    return this.transactions;
+  }
+
   /** Adds a transaction involving the current stock. */
   addTransaction(transaction: Transaction): void {
-    // unconditionally store all new transactions for historical views and also XIRR calculations
+    // Unconditionally store all transactions for historical views and also XIRR calculations
     this.transactions.push(transaction);
 
     if (transaction.type === "BUY") {
-      // add the transaction to the current ones if it's a BUY transaction
-      this.currentTransactions.push(transaction);
+      // Add a copy of the transaction to the current ones if it's a BUY transaction
+      this.currentTransactions.push({ ...transaction });
     } else if (transaction.type === "SELL") {
       let sharesToSell = transaction.shares;
 
-      if (sharesToSell - this.getCurrentShares() > FLOAT_THRESHOLD) {
+      if (sharesToSell - this.getCurrentShares() > TOLERANCE) {
         throw new Error(
           "Cannot sell more shares than are currently in this portfolio position!"
         );
       }
 
-      while (
-        sharesToSell > FLOAT_THRESHOLD &&
-        this.currentTransactions.length > 0
-      ) {
+      while (sharesToSell > TOLERANCE && this.currentTransactions.length > 0) {
         const tx = this.currentTransactions[0];
 
         if (tx.shares >= sharesToSell) {
@@ -73,8 +74,8 @@ class PortfolioPosition {
           tx.shares -= sharesToSell;
 
           // Update realized gain
-          const gain = (transaction.quote - tx.quote) * sharesToSell;
-          this.realizedGainGross += gain;
+          this.realizedGainGross +=
+            (transaction.quote - tx.quote) * sharesToSell;
 
           // Mark current sell as complete
           sharesToSell = 0;
@@ -83,14 +84,13 @@ class PortfolioPosition {
           sharesToSell -= tx.shares;
 
           // Update realized gain
-          const gain = (transaction.quote - tx.quote) * tx.shares;
-          this.realizedGainGross += gain;
+          this.realizedGainGross += (transaction.quote - tx.quote) * tx.shares;
 
           // Mark the transaction as fully sold
           tx.shares = 0;
         }
 
-        if (tx.shares < FLOAT_THRESHOLD) {
+        if (tx.shares < TOLERANCE) {
           // The current transaction is fully sold, and we can add its fees and taxes
           this.accumulatedFeesAndTaxes += tx.fees + tx.taxes;
           // Remove the transaction if shares are exhausted
@@ -127,7 +127,7 @@ class PortfolioPosition {
   /** The average price of the currently owned shares. */
   getCurrentAveragePrice(): number {
     const shares = this.getCurrentShares();
-    return shares > FLOAT_THRESHOLD ? this.getCurrentBuyValue() / shares : 0;
+    return shares > TOLERANCE ? this.getCurrentBuyValue() / shares : 0;
   }
 
   /**
@@ -177,6 +177,13 @@ class Portfolio {
 
   addTransaction(security: Security, transaction: Transaction): void {
     this.getOrCreatePosition(security).addTransaction(transaction);
+  }
+
+  getTransactions(isin: string): Transaction[];
+  getTransactions(security: Security): Transaction[];
+  getTransactions(param: string | Security): Transaction[] {
+    const isin = typeof param === "string" ? param : param.isin;
+    return this.positions[isin].getTransactions();
   }
 
   getRealizedGains(type: "net" | "gross") {
