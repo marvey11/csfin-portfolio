@@ -1,3 +1,4 @@
+import { getDateObject } from "src/utilities";
 import { StockExchange } from "./StockExchange";
 
 type TransactionType = "BUY" | "SELL";
@@ -30,7 +31,7 @@ class Transaction {
       throw new Error("Fees cannot be negative.");
     }
 
-    this.date = typeof date === "string" ? new Date(date) : date;
+    this.date = getDateObject(date);
     this.type = type;
     this.shares = shares;
     this.quote = quote;
