@@ -4,8 +4,8 @@ import { Transaction } from "./Transaction";
 /** Threshold for floating-point comparison */
 const FLOAT_THRESHOLD = 1e-6;
 
-// Use "en-GB" locale to still use the decimal point instead of the comma in "de-DE", but still
-// use the EUR for the currency.
+// Use "en-GB" locale to avoid the number formar from "de-DE" locale,
+// but still use the EUR for the currency.
 const currencyFormatter = new Intl.NumberFormat("en-GB", {
   style: "currency",
   currency: "EUR",
