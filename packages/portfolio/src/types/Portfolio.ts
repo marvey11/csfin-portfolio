@@ -213,4 +213,4 @@ class Portfolio {
   }
 }
 
-export { Portfolio };
+export { Portfolio, PortfolioPosition };
