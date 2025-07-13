@@ -1,14 +1,24 @@
-const getDateObject = (date: string | Date): Date => {
-  if (typeof date === "string") {
-    if (isValidISODateString(date)) {
-      return new Date(date);
+const getDateObject = (dateString: string | Date): Date => {
+  if (typeof dateString === "string") {
+    if (isValidISODateString(dateString)) {
+      return new Date(dateString);
+    } else if (isValidFormattedString(dateString)) {
+      return createDateFromFormatted(dateString);
     }
-    throw new Error("Invalid date string provided");
+    throw new Error(`Invalid date string provided: ${dateString}`);
   }
 
-  return date;
+  return dateString;
 };
 
+/**
+ * Checks whether or not a date string is in proper ISO format (YYYY-MM-DD) and whether the string represents a valid date.
+ *
+ * Checks for both syntax and semantics.
+ *
+ * @param dateString The string to verify.
+ * @returns `true` if the string represents a valid ISO date string, else `false`.
+ */
 const isValidISODateString = (dateString: string): boolean => {
   // A -- check for correct format string
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
@@ -24,9 +34,7 @@ const isValidISODateString = (dateString: string): boolean => {
   }
 
   // D -- check for semantically incorrect date strings, like e.g. "2025-06-31"
-
   const [year, month, day] = dateString.split("-").map(Number);
-
   if (
     date.getFullYear() !== year ||
     date.getMonth() !== month - 1 ||
@@ -39,9 +47,52 @@ const isValidISODateString = (dateString: string): boolean => {
   return true;
 };
 
-const getISODateStringFromFormatted = (formattedDate: string): string => {
-  const [day, month, year] = formattedDate.split(/[\\.\\/]/);
-  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+/**
+ * Checks whether a formatted date string represents a locale-formatted date string.
+ *
+ * At the moment supports only locales that format dates in the short format as
+ * "dd.mm.yyyy" (de-DE and similar) or "dd/mm/yyyy" (en-GB and similar).
+ *
+ * @param formattedDate The date string to be parsed.
+ * @returns `true` if the string represents a valid formatted date string, else `false`.
+ */
+const isValidFormattedString = (formattedDate: string): boolean => {
+  // A -- check whether the string follows the supported schemas
+  if (
+    !(
+      /^\d{2}\.\d{2}\.\d{4}$/.test(formattedDate) ||
+      /^\d{2}\/\d{2}\/\d{4}$/.test(formattedDate)
+    )
+  ) {
+    return false;
+  }
+
+  // B -- parse the components and build a date
+  const [day, month, year] = getCompsFromFormatted(formattedDate);
+  const date = createDateFromComps(year, month, day);
+
+  // C -- check for semantically incorrect date strings
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return false;
+  }
+
+  // All checks passed
+  return true;
 };
 
-export { getDateObject, getISODateStringFromFormatted, isValidISODateString };
+const createDateFromFormatted = (formattedDate: string): Date => {
+  const [day, month, year] = getCompsFromFormatted(formattedDate);
+  return createDateFromComps(year, month, day);
+};
+
+const createDateFromComps = (year: number, month: number, day: number) =>
+  new Date(Date.UTC(year, month - 1, day));
+
+const getCompsFromFormatted = (formattedDate: string) =>
+  formattedDate.split(/[\\.\\/]/).map(Number) as [number, number, number];
+
+export { getDateObject, isValidFormattedString, isValidISODateString };

@@ -14,10 +14,15 @@ parsedTransactions.forEach((t) => portfolio.addTransaction(asml, t));
 console.log(portfolio.toString());
 
 const transactions = portfolio.getTransactions("NL0010273215");
-const quote: QuoteItem = new QuoteItem("2025-07-11", 683.9);
 
-const xirrGross = calculateAnnualizedReturns("gross", transactions, quote);
+const latestQuote: QuoteItem = new QuoteItem("2025-07-11", 683.9);
+
+const xirrGross = calculateAnnualizedReturns(
+  "gross",
+  transactions,
+  latestQuote
+);
 console.log(`= XIRR (Gross): ${(100 * xirrGross).toFixed(2)}%`);
 
-const xirrNet = calculateAnnualizedReturns("net", transactions, quote);
+const xirrNet = calculateAnnualizedReturns("net", transactions, latestQuote);
 console.log(`= XIRR (Net): ${(100 * xirrNet).toFixed(2)}%`);
