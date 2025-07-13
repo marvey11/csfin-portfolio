@@ -12,7 +12,7 @@ class Transaction {
 
   quote: number;
 
-  exchange: StockExchange;
+  exchange: StockExchange | null;
 
   fees: number;
 
@@ -23,7 +23,7 @@ class Transaction {
     type: TransactionType,
     shares: number,
     quote: number,
-    exchange: StockExchange,
+    exchange: StockExchange | null = null,
     fees = 0.0,
     taxes = 0.0
   ) {
