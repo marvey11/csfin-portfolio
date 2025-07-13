@@ -1,15 +1,9 @@
+import { currencyFormatter } from "../utilities";
 import { Security } from "./Security";
 import { Transaction } from "./Transaction";
 
 /** Threshold for floating-point comparison */
 const TOLERANCE = 1e-6;
-
-// Use "en-GB" locale to avoid the number formar from "de-DE" locale,
-// but still use the EUR for the currency.
-const currencyFormatter = new Intl.NumberFormat("en-GB", {
-  style: "currency",
-  currency: "EUR",
-});
 
 /**
  * A single position (or holding) in the portfolio.
