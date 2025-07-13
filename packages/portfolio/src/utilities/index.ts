@@ -1,5 +1,5 @@
 export * from "./comdirect";
 export { getDateObject } from "./dateutils";
 export { currencyFormatter } from "./formatters";
-export { getNumberFromFormatted } from "./numberutils";
+export { parseNumberWithAutoLocale } from "./numberutils";
 export * from "./xirr";

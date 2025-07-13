@@ -1,14 +1,14 @@
-const getDateObject = (dateString: string | Date): Date => {
-  if (typeof dateString === "string") {
-    if (isValidISODateString(dateString)) {
-      return new Date(dateString);
-    } else if (isValidFormattedString(dateString)) {
-      return createDateFromFormatted(dateString);
+const getDateObject = (dateOrString: string | Date): Date => {
+  if (typeof dateOrString === "string") {
+    if (isValidISODateString(dateOrString)) {
+      return new Date(dateOrString);
+    } else if (isValidFormattedString(dateOrString)) {
+      return createDateFromFormatted(dateOrString);
     }
-    throw new Error(`Invalid date string provided: ${dateString}`);
+    throw new Error(`Invalid date string provided: ${dateOrString}`);
   }
 
-  return dateString;
+  return dateOrString;
 };
 
 /**
@@ -35,11 +35,7 @@ const isValidISODateString = (dateString: string): boolean => {
 
   // D -- check for semantically incorrect date strings, like e.g. "2025-06-31"
   const [year, month, day] = dateString.split("-").map(Number);
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
+  if (!isMatchingDateObject(date, year, month, day)) {
     return false;
   }
 
@@ -72,11 +68,7 @@ const isValidFormattedString = (formattedDate: string): boolean => {
   const date = createDateFromComps(year, month, day);
 
   // C -- check for semantically incorrect date strings
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
+  if (!isMatchingDateObject(date, year, month, day)) {
     return false;
   }
 
@@ -94,5 +86,15 @@ const createDateFromComps = (year: number, month: number, day: number) =>
 
 const getCompsFromFormatted = (formattedDate: string) =>
   formattedDate.split(/[\\.\\/]/).map(Number) as [number, number, number];
+
+const isMatchingDateObject = (
+  date: Date,
+  year: number,
+  month: number,
+  day: number
+): boolean =>
+  date.getFullYear() === year &&
+  date.getMonth() === month - 1 &&
+  date.getDate() === day;
 
 export { getDateObject, isValidFormattedString, isValidISODateString };
