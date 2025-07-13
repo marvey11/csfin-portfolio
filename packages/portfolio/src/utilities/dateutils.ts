@@ -39,4 +39,9 @@ const isValidISODateString = (dateString: string): boolean => {
   return true;
 };
 
-export { getDateObject, isValidISODateString };
+const getISODateStringFromFormatted = (formattedDate: string): string => {
+  const [day, month, year] = formattedDate.split(/[\\.\\/]/);
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+};
+
+export { getDateObject, getISODateStringFromFormatted, isValidISODateString };
