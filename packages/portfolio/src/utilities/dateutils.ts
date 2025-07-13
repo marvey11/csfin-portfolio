@@ -35,7 +35,7 @@ const isValidISODateString = (dateString: string): boolean => {
 
   // D -- check for semantically incorrect date strings, like e.g. "2025-06-31"
   const [year, month, day] = dateString.split("-").map(Number);
-  if (!isMatchingDateObject(date, year, month, day)) {
+  if (!isValidDateComponents(year, month, day)) {
     return false;
   }
 
@@ -63,12 +63,9 @@ const isValidFormattedString = (formattedDate: string): boolean => {
     return false;
   }
 
-  // B -- parse the components and build a date
+  // B -- parse the components and check them
   const [day, month, year] = getCompsFromFormatted(formattedDate);
-  const date = createDateFromComps(year, month, day);
-
-  // C -- check for semantically incorrect date strings
-  if (!isMatchingDateObject(date, year, month, day)) {
+  if (!isValidDateComponents(year, month, day)) {
     return false;
   }
 
@@ -87,14 +84,26 @@ const createDateFromComps = (year: number, month: number, day: number) =>
 const getCompsFromFormatted = (formattedDate: string) =>
   formattedDate.split(/[\\.\\/]/).map(Number) as [number, number, number];
 
-const isMatchingDateObject = (
-  date: Date,
+/**
+ * Checks whether the provided date components year, month, and day are valid.
+ *
+ * This function is used to catch semantically incorrect dates.
+ *
+ * For example, the incorrect date 31/06/2025 will likely be converted to 01/07/2025 on Date
+ * instantiation. In that case the day/month/year components will not be matching the actual date
+ * object.
+ */
+const isValidDateComponents = (
   year: number,
   month: number,
   day: number
-): boolean =>
-  date.getFullYear() === year &&
-  date.getMonth() === month - 1 &&
-  date.getDate() === day;
+): boolean => {
+  const date = createDateFromComps(year, month, day);
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+};
 
 export { getDateObject, isValidFormattedString, isValidISODateString };
