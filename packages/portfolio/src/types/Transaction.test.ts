@@ -1,15 +1,10 @@
-import { StockExchange } from "./StockExchange";
 import { Transaction } from "./Transaction";
 
 describe("Test Suite for Transaction", () => {
-  const exchange = new StockExchange("NYSE", "United States");
-
   it("should pass basic tests when using a date string", () => {
-    const transaction = new Transaction("2025-07-13", "BUY", 10, 100, exchange);
+    const transaction = new Transaction("2025-07-13", "BUY", 10, 100);
     expect(transaction.date).toStrictEqual(new Date("2025-07-13"));
-    expect(transaction.exchange).toStrictEqual(
-      new StockExchange("NYSE", "United States")
-    );
+    expect(transaction.exchange).toBeNull();
     expect(transaction.fees).toStrictEqual(0);
     expect(transaction.quote).toStrictEqual(100);
     expect(transaction.shares).toStrictEqual(10);
@@ -23,14 +18,12 @@ describe("Test Suite for Transaction", () => {
       "BUY",
       10,
       100,
-      exchange,
+      null,
       12.34,
       10.05
     );
     expect(transaction.date).toStrictEqual(new Date("2025-07-13"));
-    expect(transaction.exchange).toStrictEqual(
-      new StockExchange("NYSE", "United States")
-    );
+    expect(transaction.exchange).toBeNull();
     expect(transaction.fees).toBeCloseTo(12.34, 6);
     expect(transaction.quote).toStrictEqual(100);
     expect(transaction.shares).toStrictEqual(10);
@@ -39,14 +32,14 @@ describe("Test Suite for Transaction", () => {
   });
 
   it("should correctly throw an exception when the date string is invalid", () => {
-    expect(
-      () => new Transaction("2025-06-31", "BUY", 10, 100, exchange)
-    ).toThrow("Invalid date string provided");
+    expect(() => new Transaction("2025-06-31", "BUY", 10, 100)).toThrow(
+      "Invalid date string provided"
+    );
   });
 
   it("should correctly throw an exception when the fees are negative", () => {
     expect(
-      () => new Transaction("2025-07-13", "BUY", 10, 100, exchange, -1)
+      () => new Transaction("2025-07-13", "BUY", 10, 100, null, -1)
     ).toThrow("Fees cannot be negative.");
   });
 });
