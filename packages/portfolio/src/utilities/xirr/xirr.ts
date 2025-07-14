@@ -1,4 +1,4 @@
-import { QuoteItem, Transaction } from "src/types";
+import { QuoteItem, Transaction } from "@csfin-toolkit/core";
 import { CashFlow } from "./types";
 
 const MAX_ITERATIONS = 100;

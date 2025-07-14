@@ -1,6 +1,8 @@
-import { Transaction } from "../../types";
-import { getDateObject } from "../dateutils";
-import { parseNumberWithAutoLocale } from "../numberutils";
+import {
+  getDateObject,
+  parseNumberWithAutoLocale,
+  Transaction,
+} from "@csfin-toolkit/core";
 import { RawTransaction } from "./types";
 
 const convertToTransaction = (data: RawTransaction): Transaction => {

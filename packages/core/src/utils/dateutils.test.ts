@@ -2,7 +2,7 @@ import {
   getDateObject,
   isValidFormattedString,
   isValidISODateString,
-} from "./dateutils";
+} from "./dateutils.js";
 
 describe("Test suite for dateutils", () => {
   describe("Test suite for getDateObject", () => {

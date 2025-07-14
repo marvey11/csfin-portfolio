@@ -1,5 +1,5 @@
 {
-  "name": "@csfin-toolkit/portfolio",
+  "name": "@csfin-toolkit/core",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -15,11 +15,5 @@
       "default": "./dist/index.js"
     }
   },
-  "dependencies": {
-    "@csfin-toolkit/core": "*",
-    "papaparse": "^5.5.3"
-  },
-  "devDependencies": {
-    "@types/papaparse": "^5.3.16"
-  }
+  "dependencies": {}
 }
