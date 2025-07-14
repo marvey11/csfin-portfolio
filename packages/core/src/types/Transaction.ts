@@ -1,4 +1,4 @@
-import { getDateObject } from "../utilities";
+import { getDateObject } from "../utils";
 import { StockExchange } from "./StockExchange";
 
 type TransactionType = "BUY" | "SELL";

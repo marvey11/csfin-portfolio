@@ -1,4 +1,4 @@
-import { getDateObject } from "../utilities";
+import { getDateObject } from "../utils";
 
 class QuoteItem {
   private date: Date;
