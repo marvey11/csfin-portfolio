@@ -1,17 +1,15 @@
-type AbrechnungsdatenSchema = {
-  "Datum Ausführung": string;
-  WKN: string;
-  ISIN: string;
-  Bezeichnung: string;
-  Geschäftsart: string;
-  "Stücke/Nom.": string;
-  Kurs: string;
-  Währung: string;
-  "Kurswert EUR": string;
-  "Kundenendbetrag EUR": string;
-  "Entgelt (Summe eigen und fremd) EUR": string;
-  Ordernummer: string;
-  Devisenkurs: string;
+type RawTransaction = {
+  executionDate: string;
+  nsin: string;
+  isin: string;
+  name: string;
+  type: string;
+  shares: string;
+  price: string;
+  currency: string;
+  totalFees: string;
+  comdirectID: string;
+  exchangeRate: string;
 };
 
-export type { AbrechnungsdatenSchema };
+export type { RawTransaction };

@@ -1,6 +1,6 @@
 import { Portfolio, StockExchange, Transaction } from ".";
-import { PortfolioPosition } from "./Portfolio";
-import { Security } from "./Security";
+import { PortfolioPosition } from "./portfolio";
+import { Security } from "./security";
 
 describe("Test Suite for the portfolio types", () => {
   const security = new Security("DE1234567890", "123456", "Fictional Inc.");
@@ -100,7 +100,17 @@ describe("Test Suite for the portfolio types", () => {
         new Transaction("2025-07-13", "SELL", 10, 120, exchange)
       );
 
-      expect(item.getTransactions(security)).toHaveLength(3);
+      expect(item.getAllPositions()).toHaveLength(1);
+
+      // test different ways to access the position
+      expect(item.getPosition(security)).toBeDefined();
+      expect(item.getPosition(security.isin)).toBeDefined();
+
+      // test several ways to access the transactions via the position
+      expect(item.getPosition(security)?.getTransactions()).toHaveLength(3);
+      expect(item.getPosition(security.isin)?.getTransactions()).toHaveLength(
+        3
+      );
 
       // gross and net should be the same as we haven't specified fees or taxes
       expect(item.getRealizedGains("gross")).toStrictEqual(200);

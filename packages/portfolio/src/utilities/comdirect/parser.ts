@@ -1,13 +1,29 @@
 import Papa from "papaparse";
-import { Transaction } from "../../types";
-import { convertToTransaction } from "./adapters";
-import { AbrechnungsdatenSchema } from "./types";
+import { RawTransaction } from "./types";
 
-const parseTransactions = (file: string): Transaction[] => {
-  return Papa.parse<AbrechnungsdatenSchema>(file, {
+const parseTransactionData = (file: string): RawTransaction[] =>
+  Papa.parse<RawTransaction>(file, {
     delimiter: ",",
+    skipEmptyLines: true,
     header: true,
-  }).data.map(convertToTransaction);
+    transformHeader: (rawHeader, columnIndex) =>
+      columnIndex in headerTransformations
+        ? (headerTransformations[columnIndex] as string)
+        : rawHeader,
+  }).data;
+
+const headerTransformations: { [key: number]: keyof RawTransaction } = {
+  1: "executionDate",
+  2: "nsin",
+  3: "isin",
+  4: "name",
+  5: "type",
+  6: "shares",
+  7: "price",
+  8: "currency",
+  11: "totalFees",
+  26: "comdirectID",
+  27: "exchangeRate",
 };
 
-export { parseTransactions };
+export { parseTransactionData };

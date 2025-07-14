@@ -1,1 +1,2 @@
-export { parseTransactions } from "./parser";
+export { convertToTransaction } from "./adapters";
+export { parseTransactionData } from "./parser";
