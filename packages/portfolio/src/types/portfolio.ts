@@ -1,5 +1,5 @@
 import { currencyFormatter } from "../utilities";
-import { Security } from "./Security";
+import { Security } from "./security";
 import { Transaction } from "./Transaction";
 
 /** Threshold for floating-point comparison */
@@ -168,15 +168,18 @@ class Portfolio {
     this.positions = {};
   }
 
-  addTransaction(security: Security, transaction: Transaction): void {
-    this.getOrCreatePosition(security).addTransaction(transaction);
+  getAllPositions(): PortfolioPosition[] {
+    return Object.values(this.positions);
   }
 
-  getTransactions(isin: string): Transaction[];
-  getTransactions(security: Security): Transaction[];
-  getTransactions(param: string | Security): Transaction[] {
-    const isin = typeof param === "string" ? param : param.isin;
-    return this.positions[isin].getTransactions();
+  getPosition(isin: string): PortfolioPosition | null;
+  getPosition(security: Security): PortfolioPosition | null;
+  getPosition(param: string | Security): PortfolioPosition | null {
+    return this.positions[typeof param === "string" ? param : param.isin];
+  }
+
+  addTransaction(security: Security, transaction: Transaction): void {
+    this.getOrCreatePosition(security).addTransaction(transaction);
   }
 
   getRealizedGains(type: "net" | "gross") {
@@ -189,7 +192,7 @@ class Portfolio {
   // Generic methods
 
   toString(): string {
-    return Object.values(this.positions)
+    return this.getAllPositions()
       .map((position) => position.toString())
       .join("\n\n");
   }
