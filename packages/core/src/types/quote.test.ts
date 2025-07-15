@@ -70,7 +70,7 @@ describe("Test Suite for quotes", () => {
     it("should correctly find the latest quote", () => {
       const repo = new QuoteRepository();
 
-      // latest quote added in the middle
+      // latest quote added in the middle; make sure sorting works as expected
 
       repo.add("DE1234567890", "2025-07-12", 110);
       repo.add("DE1234567890", "2025-07-13", 115);
