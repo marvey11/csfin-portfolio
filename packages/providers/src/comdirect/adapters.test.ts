@@ -2,7 +2,7 @@ import { convertToTransaction } from "./adapters";
 import { RawTransaction } from "./types";
 
 describe("Test Suite for adapters", () => {
-  const rt01: RawTransaction = {
+  const rt: RawTransaction = {
     executionDate: "15/07/2025",
     nsin: "123456",
     isin: "DE1234567890",
@@ -16,11 +16,8 @@ describe("Test Suite for adapters", () => {
     exchangeRate: "1.000000",
   };
 
-  const rt02 = { ...rt01, type: "Verkauf" };
-  const rt03 = { ...rt01, type: "Invalid" };
-
   it("should pass basic tests with a BUY transaction", () => {
-    const tx = convertToTransaction(rt01);
+    const tx = convertToTransaction(rt);
     expect(tx.date).toStrictEqual(new Date("2025-07-15"));
     expect(tx.exchange).toBeNull();
     expect(tx.fees).toBeCloseTo(12.34, 6);
@@ -31,7 +28,7 @@ describe("Test Suite for adapters", () => {
   });
 
   it("should pass basic tests with a SELL transaction", () => {
-    const tx = convertToTransaction(rt02);
+    const tx = convertToTransaction({ ...rt, type: "Verkauf" });
     expect(tx.date).toStrictEqual(new Date("2025-07-15"));
     expect(tx.exchange).toBeNull();
     expect(tx.fees).toBeCloseTo(12.34, 6);
@@ -42,7 +39,7 @@ describe("Test Suite for adapters", () => {
   });
 
   it("should correctly throw an exception when encountering invalid type", () => {
-    expect(() => convertToTransaction(rt03)).toThrow(
+    expect(() => convertToTransaction({ ...rt, type: "Invalid" })).toThrow(
       "Invalid raw transaction type: Invalid"
     );
   });
