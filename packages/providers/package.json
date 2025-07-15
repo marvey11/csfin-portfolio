@@ -1,5 +1,5 @@
 {
-  "name": "@csfin-toolkit/portfolio",
+  "name": "@csfin-toolkit/providers",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -17,9 +17,10 @@
   },
   "dependencies": {
     "@csfin-toolkit/core": "*",
-    "@csfin-toolkit/providers": "*",
-    "dotenv": "^17.2.0",
-    "zod": "^4.0.5"
+    "papaparse": "^5.5.3",
+    "tslib": "^2.3.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/papaparse": "^5.3.16"
+  }
 }

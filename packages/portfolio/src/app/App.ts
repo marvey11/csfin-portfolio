@@ -5,13 +5,13 @@ import {
   Security,
   SecurityRepository,
 } from "@csfin-toolkit/core";
-import fs from "node:fs";
-import { ConfigurationSchema } from "../config";
-import { calculateAnnualizedReturns } from "../utilities";
 import {
   convertToTransaction,
   parseTransactionData,
-} from "../utilities/comdirect";
+} from "@csfin-toolkit/providers";
+import fs from "node:fs";
+import { ConfigurationSchema } from "../config";
+import { calculateAnnualizedReturns } from "../utilities";
 
 class App {
   private config: ConfigurationSchema;
