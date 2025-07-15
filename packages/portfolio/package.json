@@ -17,7 +17,9 @@
   },
   "dependencies": {
     "@csfin-toolkit/core": "*",
-    "papaparse": "^5.5.3"
+    "dotenv": "^17.2.0",
+    "papaparse": "^5.5.3",
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@types/papaparse": "^5.3.16"

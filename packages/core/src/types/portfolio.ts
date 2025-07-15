@@ -145,18 +145,17 @@ class PortfolioPosition {
       `  Number of Total Transactions: ${this.transactions.length}\n` +
       `  Number of Currently Active (BUY) Transactions: ${this.currentTransactions.length}\n` +
       `  Current Shares: ${this.getCurrentShares().toFixed(3)}\n` +
-      `  Buy Value of Current Shares (Gross): ${currencyFormatter.format(
+      `  Buy Value of Current Shares: ${currencyFormatter.format(
         this.getCurrentBuyValue()
-      )}\n` +
-      `  Current Average Price (Gross): ${currencyFormatter.format(
+      )} (gross)\n` +
+      `  Current Average Price: ${currencyFormatter.format(
         this.getCurrentAveragePrice()
-      )}\n` +
-      `  Realised Gain (Gross): ${currencyFormatter.format(
+      )} (gross)\n` +
+      `  Realised Gain: ${currencyFormatter.format(
         this.getRealizedGains("gross")
-      )}\n` +
-      `  Realised Gain (Net): ${currencyFormatter.format(
+      )} (gross), ${currencyFormatter.format(
         this.getRealizedGains("net")
-      )}`
+      )} (net)`
     );
   }
 }
