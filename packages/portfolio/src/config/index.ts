@@ -5,10 +5,16 @@ dotenv.config();
 
 const envVarsSchema = z.object({
   CSFIN_DATA_DIRECTORY: z.string(),
+  STOCK_METADATA_FILE_NAME: z.string().optional(),
+  TRANSACTION_DIR_NAME: z.string().optional(),
+  QUOTES_DIR_NAME: z.string().optional(),
 });
 
 interface ConfigurationSchema {
   dataDirectory: string;
+  metadataFileName: string;
+  transactionDirName: string;
+  quotesDirName: string;
 }
 
 class Config {
@@ -31,6 +37,10 @@ class Config {
 
     this.config = {
       dataDirectory: envVars.CSFIN_DATA_DIRECTORY,
+      metadataFileName:
+        envVars.STOCK_METADATA_FILE_NAME ?? "stock-metadata.json",
+      transactionDirName: envVars.TRANSACTION_DIR_NAME ?? "transactions",
+      quotesDirName: envVars.QUOTES_DIR_NAME ?? "quotes",
     };
 
     return this.config;

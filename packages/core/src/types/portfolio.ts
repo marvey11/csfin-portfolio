@@ -56,7 +56,7 @@ class PortfolioPosition {
 
       if (sharesToSell - this.getCurrentShares() > TOLERANCE) {
         throw new Error(
-          "Cannot sell more shares than are currently in this portfolio position!"
+          `Cannot sell more shares than are currently in this portfolio position (ISIN: ${this.security.isin})`
         );
       }
 

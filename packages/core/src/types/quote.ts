@@ -1,5 +1,12 @@
 import { getDateObject } from "../utils";
 
+interface QuoteData {
+  name: string;
+  nsin: string;
+  exchange: string;
+  items: QuoteItem[];
+}
+
 class QuoteItem {
   private date: Date;
   private price: number;
@@ -19,6 +26,14 @@ class QuoteItem {
 }
 
 class QuoteRepository {
+  public static fromData(): QuoteRepository {
+    const repo = new QuoteRepository();
+
+    // TODO: deserialise quotes --> to be implemented in issue #21
+
+    return repo;
+  }
+
   private quotes: { [key: string]: QuoteItem[] };
 
   constructor() {
@@ -57,12 +72,37 @@ class QuoteRepository {
   }
 
   private addQuoteItem(isin: string, quote: QuoteItem) {
-    // TODO: check whether there is already a quote item stored for the ISIN and date
     if (!(isin in this.quotes)) {
       this.quotes[isin] = [];
     }
-    this.quotes[isin].push(quote);
+
+    const newDate = quote.getDate();
+    const existingQuoteIndex = this.quotes[isin].findIndex((q) => {
+      const currentDate = q.getDate();
+      return (
+        currentDate.getFullYear() === newDate.getFullYear() &&
+        currentDate.getMonth() === newDate.getMonth() &&
+        currentDate.getDate() === newDate.getDate()
+      );
+    });
+
+    if (existingQuoteIndex !== -1) {
+      // Replace existing quote for the same day to ensure data is up-to-date.
+      this.quotes[isin][existingQuoteIndex] = quote;
+    } else {
+      // Add new quote if no entry for this day exists.
+      this.quotes[isin].push(quote);
+    }
+  }
+
+  toString(): string {
+    return `> Quotes: ${
+      Object.keys(this.quotes).length
+    } ISINs stored, ${Object.values(this.quotes).reduce(
+      (count, quoteArray) => count + quoteArray.length,
+      0
+    )} quotes stored\n`;
   }
 }
 
-export { QuoteItem, QuoteRepository };
+export { QuoteItem, QuoteRepository, type QuoteData };

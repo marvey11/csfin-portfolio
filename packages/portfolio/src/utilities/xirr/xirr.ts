@@ -74,7 +74,6 @@ const calculateAnnualizedReturns = (
 
   let low = -0.999999;
   let high = 10.0;
-  let rate = 0;
 
   if (getNetPresentValue(low) * getNetPresentValue(high) > 0) {
     let tempLow = low;
@@ -108,6 +107,8 @@ const calculateAnnualizedReturns = (
       return NaN; // No clear root found
     }
   }
+
+  let rate = 0;
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     rate = (low + high) / 2;
