@@ -13,4 +13,8 @@ STOCK_METADATA_FILE_NAME=stock-metadata.json
 # directory containing the transaction CSV files (optional; defaults to "transactions")
 # this path is relative to CSFIN_DATA_DIR
 TRANSACTION_DATA_DIR=transactions
+
+# directory containing the quote data CSV files (optional; defaults to "quotes")
+# this path is relative to CSFIN_DATA_DIR
+QUOTES_DIR_NAME=quotes
 ```
