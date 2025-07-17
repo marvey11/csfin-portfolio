@@ -122,7 +122,6 @@ class App {
       }
     }
 
-    console.log(quotesRepository.toString());
     console.log(">>> Evaluating all Portfolio positions");
     for (const position of portfolio.getAllPositions()) {
       console.log(position.toString());
