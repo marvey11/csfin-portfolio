@@ -78,7 +78,7 @@ describe("Test Suite for the portfolio types", () => {
           new Transaction("2025-07-13", "SELL", 10, 120, exchange)
         )
       ).toThrow(
-        "Cannot sell more shares than are currently in this portfolio position!"
+        "Cannot sell more shares than are currently in this portfolio position (ISIN: DE1234567890)"
       );
     });
   });

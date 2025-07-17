@@ -1,9 +1,11 @@
 import {
   getDateObject,
   parseNumberWithAutoLocale,
+  QuoteData,
+  QuoteItem,
   Transaction,
 } from "@csfin-toolkit/core";
-import { RawTransaction } from "./types";
+import { RawQuoteData, RawQuoteItem, RawTransaction } from "./types";
 
 const convertToTransaction = (data: RawTransaction): Transaction => {
   const { executionDate, type, shares, price, totalFees } = data;
@@ -29,4 +31,19 @@ const convertRawType = (rawType: string): "BUY" | "SELL" => {
   throw new Error(`Invalid raw transaction type: ${rawType}`);
 };
 
-export { convertToTransaction };
+const convertToQuoteData = (data: RawQuoteData): QuoteData => {
+  const { name, nsin, exchange, items } = data;
+  return {
+    name,
+    nsin,
+    exchange,
+    items: items.map(convertToQuoteItem),
+  };
+};
+
+const convertToQuoteItem = (data: RawQuoteItem): QuoteItem => {
+  const { date, price } = data;
+  return new QuoteItem(date, parseNumberWithAutoLocale(price));
+};
+
+export { convertToQuoteData, convertToTransaction };

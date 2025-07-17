@@ -16,6 +16,14 @@ class Security {
 }
 
 class SecurityRepository {
+  public static fromData(): SecurityRepository {
+    const repo = new SecurityRepository();
+
+    // TODO: deserialise securities --> to be implemented in issue #21
+
+    return repo;
+  }
+
   private securities: Security[];
 
   constructor() {
@@ -49,6 +57,10 @@ class SecurityRepository {
 
   get(isin: string): Security | undefined {
     return this.securities.find((obj) => obj.isin === isin);
+  }
+
+  getByNSIN(nsin: string): Security | undefined {
+    return this.securities.find((obj) => obj.nsin === nsin);
   }
 
   /**

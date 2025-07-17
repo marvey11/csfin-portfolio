@@ -15,5 +15,11 @@
       "default": "./dist/index.js"
     }
   },
-  "dependencies": {}
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {}
 }

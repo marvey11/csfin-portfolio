@@ -15,6 +15,9 @@
       "default": "./dist/index.js"
     }
   },
+  "scripts": {
+    "test": "vitest"
+  },
   "dependencies": {
     "@csfin-toolkit/core": "*",
     "papaparse": "^5.5.3",
