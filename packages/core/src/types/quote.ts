@@ -1,40 +1,65 @@
-import { getDateObject } from "../utils";
-
-interface QuoteData {
-  name: string;
-  nsin: string;
-  exchange: string;
-  items: QuoteItem[];
-}
+import {
+  compareNormalizedDates,
+  formatNormalizedDate,
+  getDateObject,
+} from "../utils";
+import {
+  isQuoteItemJSON,
+  isQuoteRepositoryJSON,
+  QuoteItemJSON,
+  QuoteRepositoryJSON,
+} from "./json";
 
 class QuoteItem {
-  private date: Date;
-  private price: number;
+  static fromJSON(data: unknown): QuoteItem {
+    if (!isQuoteItemJSON(data)) {
+      throw new Error("Invalid quote item data");
+    }
+
+    return new QuoteItem(data.date, data.price);
+  }
+
+  readonly date: Date;
+  price: number;
 
   constructor(date: string | Date, price: number) {
     this.date = getDateObject(date);
     this.price = price;
   }
 
-  getDate(): Date {
-    return this.date;
-  }
-
-  getPrice(): number {
-    return this.price;
+  toJSON(): QuoteItemJSON {
+    return {
+      date: formatNormalizedDate(this.date),
+      price: this.price,
+    };
   }
 }
 
 class QuoteRepository {
-  public static fromData(): QuoteRepository {
+  static fromJSON(data: unknown): QuoteRepository {
+    if (!isQuoteRepositoryJSON(data)) {
+      throw new Error("Invalid quote repository data");
+    }
+
     const repo = new QuoteRepository();
 
-    // TODO: deserialise quotes --> to be implemented in issue #21
+    for (const isin in data) {
+      const quotes = data[isin].map((item) => QuoteItem.fromJSON(item));
+
+      for (const q of quotes) {
+        repo.add(isin, q);
+      }
+    }
 
     return repo;
   }
 
-  private quotes: { [key: string]: QuoteItem[] };
+  /**
+   * Stores a list of quote items per ISIN.
+   *
+   * Each list of quote items is sorted by date to speed up lookup operations.
+   */
+  readonly quotes: { [key: string]: QuoteItem[] };
 
   constructor() {
     this.quotes = {};
@@ -63,36 +88,21 @@ class QuoteRepository {
   }
 
   getLatestQuote(isin: string): QuoteItem | undefined {
-    if (isin in this.quotes) {
-      const isinQuotes = [...this.quotes[isin]];
-      isinQuotes.sort((a, b) => b.getDate().getTime() - a.getDate().getTime());
-      return isinQuotes.length ? isinQuotes[0] : undefined;
+    if (!(isin in this.quotes)) {
+      return undefined;
     }
-    return undefined;
+
+    const quoteList = this.quotes[isin];
+    const quoteLen = quoteList.length;
+    return quoteLen ? quoteList[quoteLen - 1] : undefined;
   }
 
-  private addQuoteItem(isin: string, quote: QuoteItem) {
-    if (!(isin in this.quotes)) {
-      this.quotes[isin] = [];
+  toJSON(): QuoteRepositoryJSON {
+    const json: QuoteRepositoryJSON = {};
+    for (const isin in this.quotes) {
+      json[isin] = this.quotes[isin].map((item) => item.toJSON());
     }
-
-    const newDate = quote.getDate();
-    const existingQuoteIndex = this.quotes[isin].findIndex((q) => {
-      const currentDate = q.getDate();
-      return (
-        currentDate.getFullYear() === newDate.getFullYear() &&
-        currentDate.getMonth() === newDate.getMonth() &&
-        currentDate.getDate() === newDate.getDate()
-      );
-    });
-
-    if (existingQuoteIndex !== -1) {
-      // Replace existing quote for the same day to ensure data is up-to-date.
-      this.quotes[isin][existingQuoteIndex] = quote;
-    } else {
-      // Add new quote if no entry for this day exists.
-      this.quotes[isin].push(quote);
-    }
+    return json;
   }
 
   toString(): string {
@@ -103,6 +113,45 @@ class QuoteRepository {
       0
     )} quotes stored\n`;
   }
+
+  private addQuoteItem(isin: string, quote: QuoteItem) {
+    if (!(isin in this.quotes)) {
+      // Quotes for this ISIN are not yet stored
+
+      // Create new list and add the new quote directly
+      this.quotes[isin] = [quote];
+
+      return;
+    }
+
+    // Binary Search algorithm
+
+    let low = 0;
+    let high = this.quotes[isin].length - 1;
+
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const midItem = this.quotes[isin][mid];
+
+      const cmp = compareNormalizedDates(quote.date, midItem.date);
+
+      if (cmp === 0) {
+        // Replace existing quote if dates match.
+        this.quotes[isin][mid] = quote;
+        return;
+      }
+
+      if (cmp < 0) {
+        // new quotes's date is earlier than midItem's date
+        high = mid - 1;
+      } else {
+        // new quotes's date is later than midItem's date
+        low = mid + 1;
+      }
+    }
+
+    this.quotes[isin].splice(low, 0, quote);
+  }
 }
 
-export { QuoteItem, QuoteRepository, type QuoteData };
+export { QuoteItem, QuoteRepository };

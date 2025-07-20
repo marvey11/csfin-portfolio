@@ -1,11 +1,10 @@
 import {
   getDateObject,
   parseNumberWithAutoLocale,
-  QuoteData,
   QuoteItem,
   Transaction,
 } from "@csfin-toolkit/core";
-import { RawQuoteData, RawQuoteItem, RawTransaction } from "./types";
+import { QuoteData, RawQuoteData, RawQuoteItem, RawTransaction } from "./types";
 
 const convertToTransaction = (data: RawTransaction): Transaction => {
   const { executionDate, type, shares, price, totalFees } = data;
@@ -15,7 +14,6 @@ const convertToTransaction = (data: RawTransaction): Transaction => {
     // when selling shares, the amount is listed in negavtive numbers; we need to reverse that
     Math.abs(parseNumberWithAutoLocale(shares)),
     parseNumberWithAutoLocale(price),
-    null, // stock exchange is not listed
     // fees are listed in negative numbers; we need to reverse that
     Math.abs(parseNumberWithAutoLocale(totalFees))
   );

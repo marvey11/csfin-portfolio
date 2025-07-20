@@ -20,23 +20,23 @@ describe("Test Suite for adapters", () => {
     it("should pass basic tests with a BUY transaction", () => {
       const tx = convertToTransaction(rt);
       expect(tx.date).toStrictEqual(new Date("2025-07-15"));
-      expect(tx.exchange).toBeNull();
+      expect(tx.stockExchange).toBeNull();
       expect(tx.fees).toBeCloseTo(12.34, 6);
       expect(tx.quote).toStrictEqual(1000);
       expect(tx.shares).toStrictEqual(10);
       expect(tx.taxes).toStrictEqual(0);
-      expect(tx.type).toStrictEqual("BUY");
+      expect(tx.transactionType).toStrictEqual("BUY");
     });
 
     it("should pass basic tests with a SELL transaction", () => {
       const tx = convertToTransaction({ ...rt, type: "Verkauf" });
       expect(tx.date).toStrictEqual(new Date("2025-07-15"));
-      expect(tx.exchange).toBeNull();
+      expect(tx.stockExchange).toBeNull();
       expect(tx.fees).toBeCloseTo(12.34, 6);
       expect(tx.quote).toStrictEqual(1000);
       expect(tx.shares).toStrictEqual(10);
       expect(tx.taxes).toStrictEqual(0);
-      expect(tx.type).toStrictEqual("SELL");
+      expect(tx.transactionType).toStrictEqual("SELL");
     });
 
     it("should correctly throw an exception when encountering invalid type", () => {
@@ -72,15 +72,11 @@ describe("Test Suite for adapters", () => {
 
       expect(quoteData.items).toHaveLength(2);
 
-      expect(quoteData.items[0].getDate()).toStrictEqual(
-        new Date("2025-07-15")
-      );
-      expect(quoteData.items[0].getPrice()).toStrictEqual(1000);
+      expect(quoteData.items[0].date).toStrictEqual(new Date("2025-07-15"));
+      expect(quoteData.items[0].price).toStrictEqual(1000);
 
-      expect(quoteData.items[1].getDate()).toStrictEqual(
-        new Date("2025-07-16")
-      );
-      expect(quoteData.items[1].getPrice()).toStrictEqual(1050);
+      expect(quoteData.items[1].date).toStrictEqual(new Date("2025-07-16"));
+      expect(quoteData.items[1].price).toStrictEqual(1050);
     });
   });
 });

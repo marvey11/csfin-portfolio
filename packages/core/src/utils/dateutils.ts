@@ -1,14 +1,46 @@
+const normalizeDate = (date: Date): Date => {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    )
+  );
+};
+
+const compareNormalizedDates = (date1: Date, date2: Date): number => {
+  const norm1 = normalizeDate(date1).getTime();
+  const norm2 = normalizeDate(date2).getTime();
+
+  if (norm1 < norm2) {
+    return -1;
+  }
+  if (norm1 > norm2) {
+    return 1;
+  }
+  return 0;
+};
+
 const getDateObject = (dateOrString: string | Date): Date => {
+  let date: Date;
+
   if (typeof dateOrString === "string") {
     if (isValidISODateString(dateOrString)) {
-      return new Date(dateOrString);
+      date = new Date(dateOrString);
     } else if (isValidFormattedString(dateOrString)) {
-      return createDateFromFormatted(dateOrString);
+      date = createDateFromFormatted(dateOrString);
+    } else {
+      throw new Error(`Invalid date string provided: ${dateOrString}`);
     }
-    throw new Error(`Invalid date string provided: ${dateOrString}`);
+  } else {
+    date = dateOrString;
   }
 
-  return dateOrString;
+  return normalizeDate(date);
 };
 
 /**
@@ -106,4 +138,10 @@ const isValidDateComponents = (
   );
 };
 
-export { getDateObject, isValidFormattedString, isValidISODateString };
+export {
+  compareNormalizedDates,
+  getDateObject,
+  isValidFormattedString,
+  isValidISODateString,
+  normalizeDate,
+};

@@ -22,20 +22,23 @@ const calculateAnnualizedReturns = (
     throw new Error("Transaction list cannot be empty");
   }
 
-  const finalShareCount = transactions.reduce((total, { type, shares }) => {
-    if (type === "BUY") {
-      return total + shares;
-    }
-
-    if (type === "SELL") {
-      if (shares - total > TOLERANCE) {
-        throw new Error("Cannot sell more shares than owned");
+  const finalShareCount = transactions.reduce(
+    (total, { transactionType: type, shares }) => {
+      if (type === "BUY") {
+        return total + shares;
       }
-      return total - shares;
-    }
 
-    throw new Error(`Invalid transaction type: ${type}`);
-  }, 0.0);
+      if (type === "SELL") {
+        if (shares - total > TOLERANCE) {
+          throw new Error("Cannot sell more shares than owned");
+        }
+        return total - shares;
+      }
+
+      throw new Error(`Invalid transaction type: ${type}`);
+    },
+    0.0
+  );
 
   if (finalShareCount > TOLERANCE && quoteItem == null) {
     throw Error(
@@ -48,8 +51,8 @@ const calculateAnnualizedReturns = (
   if (finalShareCount > TOLERANCE) {
     const item = quoteItem as QuoteItem;
     cashflows.push({
-      cashDate: item.getDate(),
-      cashAmount: finalShareCount * item.getPrice(),
+      cashDate: item.date,
+      cashAmount: finalShareCount * item.price,
     });
   }
   cashflows.sort((a, b) => a.cashDate.getTime() - b.cashDate.getTime());
@@ -136,22 +139,25 @@ const generateCashflows = (
   evalType: "net" | "gross",
   transactions: Transaction[]
 ): CashFlow[] =>
-  transactions.map(({ type, date, quote, shares, fees, taxes }) => {
-    const multiplier = ((): number => {
-      if (type === "BUY") {
-        return -1;
-      }
-      if (type === "SELL") {
-        return 1;
-      }
-      throw new Error(`Invalid transaction type: ${type}`);
-    })();
+  transactions.map(
+    ({ transactionType: type, date, quote, shares, fees, taxes }) => {
+      const multiplier = ((): number => {
+        if (type === "BUY") {
+          return -1;
+        }
+        if (type === "SELL") {
+          return 1;
+        }
+        throw new Error(`Invalid transaction type: ${type}`);
+      })();
 
-    return {
-      cashDate: date,
-      cashAmount:
-        multiplier * shares * quote - (evalType === "net" ? fees + taxes : 0.0),
-    };
-  });
+      return {
+        cashDate: date,
+        cashAmount:
+          multiplier * shares * quote -
+          (evalType === "net" ? fees + taxes : 0.0),
+      };
+    }
+  );
 
 export { calculateAnnualizedReturns };

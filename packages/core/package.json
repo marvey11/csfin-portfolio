@@ -19,6 +19,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "crc": "^4.3.2",
     "tslib": "^2.3.0"
   },
   "devDependencies": {}

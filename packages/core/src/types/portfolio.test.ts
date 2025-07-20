@@ -1,17 +1,23 @@
-import { Portfolio, StockExchange, Transaction } from ".";
-import { PortfolioPosition } from "./portfolio";
+import { Portfolio, StockSplitRepository, Transaction } from ".";
+import { PortfolioHolding } from "./portfolio";
 import { Security } from "./security";
 
 describe("Test Suite for the portfolio types", () => {
-  const security = new Security("DE1234567890", "123456", "Fictional Inc.");
-  const exchange = new StockExchange("XETRA", "Germany");
+  const security: Security = {
+    isin: "DE1234567890",
+    nsin: "123456",
+    name: "Fictional Inc.",
+  };
+  const exchange = { name: "XETRA", country: "Germany" };
 
-  describe("Test Suite for the PortfolioPosition class", () => {
+  describe("Test Suite for the PortfolioHolding class", () => {
     it("should pass basic tests", () => {
-      const item = new PortfolioPosition(security);
-      expect(item.security).toStrictEqual(
-        new Security("DE1234567890", "123456", "Fictional Inc.")
-      );
+      const item = new PortfolioHolding(security);
+      expect(item.security).toStrictEqual({
+        isin: "DE1234567890",
+        nsin: "123456",
+        name: "Fictional Inc.",
+      });
       expect(item.getTransactions()).toHaveLength(0);
       expect(item.getCurrentShares()).toStrictEqual(0);
       expect(item.getCurrentBuyValue()).toStrictEqual(0);
@@ -21,14 +27,15 @@ describe("Test Suite for the portfolio types", () => {
     });
 
     it("should pass tests related to adding transactions", () => {
-      const item = new PortfolioPosition(security);
+      const item = new PortfolioHolding(security);
 
-      item.addTransaction(
-        new Transaction("2024-07-13", "BUY", 5, 100, exchange)
-      );
-      item.addTransaction(
-        new Transaction("2024-08-13", "BUY", 5, 100, exchange)
-      );
+      const tx1 = new Transaction("2024-07-13", "BUY", 5, 100);
+      tx1.stockExchange = exchange;
+      item.addTransaction(tx1);
+
+      const tx2 = new Transaction("2024-08-13", "BUY", 5, 100);
+      tx2.stockExchange = exchange;
+      item.addTransaction(tx2);
 
       expect(item.getTransactions()).toHaveLength(2);
       expect(item.getCurrentShares()).toStrictEqual(10);
@@ -38,9 +45,9 @@ describe("Test Suite for the portfolio types", () => {
       expect(item.getRealizedGains("gross")).toStrictEqual(0);
       expect(item.getRealizedGains("net")).toStrictEqual(0);
 
-      item.addTransaction(
-        new Transaction("2025-07-13", "SELL", 10, 120, exchange)
-      );
+      const tx3 = new Transaction("2025-07-13", "SELL", 10, 120);
+      tx3.stockExchange = exchange;
+      item.addTransaction(tx3);
 
       expect(item.getTransactions()).toHaveLength(3);
       expect(item.getCurrentShares()).toStrictEqual(0);
@@ -52,17 +59,21 @@ describe("Test Suite for the portfolio types", () => {
     });
 
     it("should pass tests when including fees and taxes", () => {
-      const item = new PortfolioPosition(security);
+      const item = new PortfolioHolding(security);
 
-      item.addTransaction(
-        new Transaction("2024-07-13", "BUY", 5, 100, exchange, 10)
-      );
-      item.addTransaction(
-        new Transaction("2024-08-13", "BUY", 5, 100, exchange, 10)
-      );
-      item.addTransaction(
-        new Transaction("2025-07-13", "SELL", 10, 120, exchange, 20, 50)
-      );
+      const tx1 = new Transaction("2024-07-13", "BUY", 5, 100, 10);
+      tx1.stockExchange = exchange;
+      item.addTransaction(tx1);
+
+      const tx2 = new Transaction("2024-08-13", "BUY", 5, 100, 10);
+      tx2.stockExchange = exchange;
+      item.addTransaction(tx2);
+
+      const tx3 = new Transaction("2025-07-13", "SELL", 10, 120, 20, 50);
+      tx3.stockExchange = exchange;
+      item.addTransaction(tx3);
+
+      expect(item.getTransactions()).toHaveLength(3);
 
       // gross gain should still be the same
       expect(item.getRealizedGains("gross")).toStrictEqual(200);
@@ -71,46 +82,42 @@ describe("Test Suite for the portfolio types", () => {
     });
 
     it("should correctly throw an exception if we are trying to sell more shares than available", () => {
-      const item = new PortfolioPosition(security);
+      const item = new PortfolioHolding(security);
 
-      expect(() =>
-        item.addTransaction(
-          new Transaction("2025-07-13", "SELL", 10, 120, exchange)
-        )
-      ).toThrow(
-        "Cannot sell more shares than are currently in this portfolio position (ISIN: DE1234567890)"
+      const tx1 = new Transaction("2025-07-13", "SELL", 10, 120);
+      tx1.stockExchange = exchange;
+
+      expect(() => item.addTransaction(tx1)).toThrow(
+        "Cannot sell more shares than are currently in this portfolio holding (ISIN: DE1234567890)"
       );
     });
   });
 
   describe("Test Suite for the Portfolio class", () => {
     it("should pass basic tests", () => {
-      const item = new Portfolio();
+      const item = new Portfolio(new StockSplitRepository());
 
-      item.addTransaction(
-        security,
-        new Transaction("2024-07-13", "BUY", 5, 100, exchange)
-      );
-      item.addTransaction(
-        security,
-        new Transaction("2024-08-13", "BUY", 5, 100, exchange)
-      );
-      item.addTransaction(
-        security,
-        new Transaction("2025-07-13", "SELL", 10, 120, exchange)
-      );
+      const tx1 = new Transaction("2024-07-13", "BUY", 5, 100);
+      tx1.stockExchange = exchange;
+      item.addTransaction(security, tx1);
 
-      expect(item.getAllPositions()).toHaveLength(1);
+      const tx2 = new Transaction("2024-08-13", "BUY", 5, 100);
+      tx2.stockExchange = exchange;
+      item.addTransaction(security, tx2);
 
-      // test different ways to access the position
-      expect(item.getPosition(security)).toBeDefined();
-      expect(item.getPosition(security.isin)).toBeDefined();
+      const tx3 = new Transaction("2025-07-13", "SELL", 10, 120);
+      tx3.stockExchange = exchange;
+      item.addTransaction(security, tx3);
 
-      // test several ways to access the transactions via the position
-      expect(item.getPosition(security)?.getTransactions()).toHaveLength(3);
-      expect(item.getPosition(security.isin)?.getTransactions()).toHaveLength(
-        3
-      );
+      expect(item.getAllHoldings()).toHaveLength(1);
+
+      // test different ways to access the holding
+      expect(item.getHolding(security)).toBeDefined();
+      expect(item.getHolding(security.isin)).toBeDefined();
+
+      // test several ways to access the transactions via the holding
+      expect(item.getHolding(security)?.getTransactions()).toHaveLength(3);
+      expect(item.getHolding(security.isin)?.getTransactions()).toHaveLength(3);
 
       // gross and net should be the same as we haven't specified fees or taxes
       expect(item.getRealizedGains("gross")).toStrictEqual(200);

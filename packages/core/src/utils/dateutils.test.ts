@@ -2,9 +2,18 @@ import {
   getDateObject,
   isValidFormattedString,
   isValidISODateString,
+  normalizeDate,
 } from "./dateutils";
 
 describe("Test suite for dateutils", () => {
+  describe("Test suite for normalizeDate", () => {
+    it("should pass basic tests", () => {
+      expect(normalizeDate(new Date("2025-07-13")).toISOString()).toStrictEqual(
+        "2025-07-13T00:00:00.000Z"
+      );
+    });
+  });
+
   describe("Test suite for getDateObject", () => {
     it("should pass basic tests", () => {
       const date = new Date("2025-07-13");

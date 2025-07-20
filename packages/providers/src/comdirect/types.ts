@@ -1,16 +1,28 @@
-export interface RawQuoteData {
+import { QuoteItem } from "@csfin-toolkit/core";
+
+/**
+ * Represents a
+ */
+interface QuoteData {
+  name: string;
+  nsin: string;
+  exchange: string;
+  items: QuoteItem[];
+}
+
+interface RawQuoteData {
   name: string;
   nsin: string;
   exchange: string;
   items: RawQuoteItem[];
 }
 
-export interface RawQuoteItem {
+interface RawQuoteItem {
   date: string;
   price: string;
 }
 
-export interface RawTransaction {
+interface RawTransaction {
   executionDate: string;
   nsin: string;
   isin: string;
@@ -23,3 +35,5 @@ export interface RawTransaction {
   comdirectID: string;
   exchangeRate: string;
 }
+
+export type { QuoteData, RawQuoteData, RawQuoteItem, RawTransaction };

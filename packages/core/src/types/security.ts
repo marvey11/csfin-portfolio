@@ -1,4 +1,6 @@
-class Security {
+import { isSecurityRepositoryJSON, SecurityRepositoryJSON } from "./json";
+
+interface Security {
   /** The security's International Securities Identification Number. */
   isin: string;
 
@@ -7,43 +9,59 @@ class Security {
 
   /** The stock's name. */
   name: string;
-
-  constructor(isin: string, nsin: string, name: string) {
-    this.isin = isin;
-    this.nsin = nsin;
-    this.name = name;
-  }
 }
 
+/**
+ * Manages a collection of securities, ensuring no duplicates based on ISIN or NSIN are added.
+ */
 class SecurityRepository {
-  public static fromData(): SecurityRepository {
+  static fromJSON(data: unknown): SecurityRepository {
+    if (!isSecurityRepositoryJSON(data)) {
+      throw new Error("Invalid security repository data");
+    }
+
     const repo = new SecurityRepository();
 
-    // TODO: deserialise securities --> to be implemented in issue #21
+    for (const security of data) {
+      repo.add(security);
+    }
 
     return repo;
   }
 
-  private securities: Security[];
+  /** The list of securities stored in the repository. */
+  readonly securities: Security[];
 
+  /**
+   * Creates an instance of SecurityRepository.
+   */
   constructor() {
     this.securities = [];
   }
 
+  /**
+   * Adds a new security to the repository.
+   * The security will not be added if a security with the same ISIN or NSIN already exists.
+   * @param security The security object to add.
+   */
   add(security: Security): void;
+  /**
+   * Adds a new security to the repository.
+   * The security will not be added if a security with the same ISIN or NSIN already exists.
+   * @param isin The security's ISIN.
+   * @param nsin The security's NSIN.
+   * @param name The security's name.
+   */
   add(isin: string, nsin: string, name: string): void;
   add(securityOrISIN: Security | string, nsin?: string, name?: string) {
-    if (
-      typeof securityOrISIN === "object" &&
-      securityOrISIN instanceof Security
-    ) {
+    if (typeof securityOrISIN === "object") {
       this.checkBeforeAdding(securityOrISIN);
     } else if (
       typeof securityOrISIN === "string" &&
       typeof nsin === "string" &&
       typeof name === "string"
     ) {
-      this.checkBeforeAdding(new Security(securityOrISIN, nsin, name));
+      this.checkBeforeAdding({ isin: securityOrISIN, nsin, name });
     } else {
       throw new Error(
         "Invalid arguments for add. Expected Security object or the security's ISIN, NSIN, and name parameters."
@@ -51,28 +69,77 @@ class SecurityRepository {
     }
   }
 
-  has(isin: string): boolean {
-    return this.securities.findIndex((obj) => obj.isin === isin) >= 0;
-  }
-
-  get(isin: string): Security | undefined {
-    return this.securities.find((obj) => obj.isin === isin);
-  }
-
-  getByNSIN(nsin: string): Security | undefined {
-    return this.securities.find((obj) => obj.nsin === nsin);
+  /**
+   * Returns a shallow copy of all securities in the repository.
+   * @returns An array of all securities.
+   */
+  getAll(): Security[] {
+    return this.securities.slice();
   }
 
   /**
-   * Before adding a new security, checks whether it is already stored (based on the security's
-   * ISIN). Will ignore the security if it already is stored in this repository.
+   * Gets a security by a specific key (ISIN or NSIN).
+   * @param key The key to search by, either 'isin' or 'nsin'.
+   * @param value The value to search for.
+   * @returns The found security or undefined if not found.
+   */
+  getBy(key: "isin" | "nsin", value: string): Security | undefined {
+    return this.findBy(key, value);
+  }
+
+  /**
+   * Checks if a security exists in the repository by a given property.
+   *
+   * @param key The property of the Security to search by, either 'isin' or 'nsin'.
+   * @param value The value to search for.
+   * @returns `true` if a security with the given property and value exists, `false` otherwise.
+   */
+  has(key: "isin" | "nsin", value: string): boolean {
+    return this.findIndexBy(key, value) >= 0;
+  }
+
+  /**
+   * Serializes the repository's securities to a JSON string.
+   * @returns A JSON string representation of the securities.
+   */
+  toJSON(): SecurityRepositoryJSON {
+    return this.securities;
+  }
+
+  /**
+   * Finds a security by a given property.
+   *
+   * @param key The property of the Security to search by.
+   * @param value The value to search for.
+   * @returns The found `Security` object or `undefined`.
+   */
+  private findBy(key: keyof Security, value: string): Security | undefined {
+    return this.securities.find((security) => security[key] === value);
+  }
+
+  /**
+   * Finds the index of a security by a given property.
+   *
+   * @param key The property of the Security to search by.
+   * @param value The value to search for.
+   * @returns The found index of the security or `-1`.
+   */
+  private findIndexBy(key: keyof Security, value: string): number {
+    return this.securities.findIndex((security) => security[key] === value);
+  }
+
+  /**
+   * Before adding a new security, checks whether it is already stored (based on the security's ISIN or NSIN).
+   * Will ignore the security if it already is stored in this repository.
    *
    * @param security The security to add.
    */
   private checkBeforeAdding(security: Security) {
-    const isin = security.isin;
-    if (this.has(isin)) {
+    const { isin, nsin } = security;
+    if (this.has("isin", isin)) {
       console.warn(`Security with ISIN ${isin} already stored. Ignored...`);
+    } else if (this.has("nsin", nsin)) {
+      console.warn(`Security with NSIN ${nsin} already stored. Ignored...`);
     } else {
       // only add if not yet stored
       this.securities.push(security);
@@ -80,4 +147,5 @@ class SecurityRepository {
   }
 }
 
-export { Security, SecurityRepository };
+export { SecurityRepository };
+export type { Security };
