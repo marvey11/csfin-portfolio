@@ -1,47 +1,45 @@
 import {
+  BuyTransaction,
   getDateObject,
   parseNumberWithAutoLocale,
+  QuoteData,
   QuoteItem,
-  Transaction,
+  SellTransaction,
 } from "@csfin-toolkit/core";
-import { QuoteData, RawQuoteData, RawQuoteItem, RawTransaction } from "./types";
+import { RawQuoteData, RawQuoteItem, RawTransaction } from "./types";
 
-const convertToTransaction = (data: RawTransaction): Transaction => {
-  const { executionDate, type, shares, price, totalFees } = data;
-  return new Transaction(
-    getDateObject(executionDate),
-    convertRawType(type),
-    // when selling shares, the amount is listed in negavtive numbers; we need to reverse that
-    Math.abs(parseNumberWithAutoLocale(shares)),
-    parseNumberWithAutoLocale(price),
-    // fees are listed in negative numbers; we need to reverse that
-    Math.abs(parseNumberWithAutoLocale(totalFees))
-  );
-};
+const convertToTransaction = (
+  data: RawTransaction
+): BuyTransaction | SellTransaction => {
+  const date = getDateObject(data.executionDate);
+  const shares = Math.abs(parseNumberWithAutoLocale(data.shares));
+  const pricePerShare = parseNumberWithAutoLocale(data.price);
+  const fees = Math.abs(parseNumberWithAutoLocale(data.totalFees));
+  // taxes are not listed in the raw transaction data
+  const taxes = 0.0;
 
-const convertRawType = (rawType: string): "BUY" | "SELL" => {
-  if (rawType === "Kauf") {
-    return "BUY";
+  if (data.type === "Kauf") {
+    return new BuyTransaction(date, shares, pricePerShare, fees);
   }
-  if (rawType === "Verkauf") {
-    return "SELL";
+  if (data.type === "Verkauf") {
+    return new SellTransaction(date, shares, pricePerShare, fees, taxes);
   }
-  throw new Error(`Invalid raw transaction type: ${rawType}`);
+  throw new Error(`Invalid raw transaction type: ${data.type}`);
 };
 
-const convertToQuoteData = (data: RawQuoteData): QuoteData => {
-  const { name, nsin, exchange, items } = data;
-  return {
-    name,
-    nsin,
-    exchange,
-    items: items.map(convertToQuoteItem),
-  };
-};
+const convertToQuoteData = ({
+  name,
+  nsin,
+  exchange,
+  items,
+}: RawQuoteData): QuoteData => ({
+  name,
+  nsin,
+  exchange,
+  items: items.map(convertToQuoteItem),
+});
 
-const convertToQuoteItem = (data: RawQuoteItem): QuoteItem => {
-  const { date, price } = data;
-  return new QuoteItem(date, parseNumberWithAutoLocale(price));
-};
+const convertToQuoteItem = ({ date, price }: RawQuoteItem): QuoteItem =>
+  new QuoteItem(date, parseNumberWithAutoLocale(price));
 
 export { convertToQuoteData, convertToTransaction };

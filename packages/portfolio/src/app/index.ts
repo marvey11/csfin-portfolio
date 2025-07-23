@@ -1,18 +1,21 @@
 import {
-  ApplicationData,
+  ApplicationRepository,
   formatCurrency,
   formatNormalizedDate,
   formatPercent,
-  QuoteRepository,
+  Portfolio,
+  RawSecurityListSchema,
+  RawStockSplitRecordSchema,
   resolvePath,
-  SecurityRepository,
-  TransactionRepository,
+  StockSplit,
 } from "@csfin-toolkit/core";
 import {
   convertToQuoteData,
   convertToTransaction,
-  parseQuoteData,
-  parseTransactionData,
+  parseRawQuoteData,
+  parseRawTransactionData,
+  RawQuoteDataRepository,
+  RawTransactionRepository,
 } from "@csfin-toolkit/providers";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import * as path from "node:path";
@@ -33,89 +36,37 @@ class App {
       )}\n`
     );
 
-    // const stockSplits: {
-    //   [key: string]: { splitDate: Date; splitRatio: number }[];
-    // } = {
-    //   US02079K1079: [{ splitDate: new Date("2022-07-22"), splitRatio: 20 }],
-    //   US0231351067: [{ splitDate: new Date("2022-06-06"), splitRatio: 20 }],
-    // };
-
+    console.log(">>> Loading application data...");
     const appdata = await this.loadApplicationData();
+
+    console.log(">>> Applying updates from raw data...");
     await this.applyUpdatesFromRawData(appdata);
 
-    // const transactionRepository = new TransactionRepository();
-
-    // try {
-    //   const data = await readJsonFile(
-    //     path.join(resolvedDataPath, this.config.jsonTransactionsFileName)
-    //   );
-
-    //   if (Array.isArray(data)) {
-    //     data.forEach(({ date, type, shares, quote, exchange, fees, taxes }) => {
-    //       transactionRepository.add(
-    //         new Transaction(
-    //           getDateObject(date),
-    //           type,
-    //           shares,
-    //           quote,
-    //           exchange,
-    //           fees,
-    //           taxes
-    //         )
-    //       );
-    //     });
-    //   } else {
-    //     console.warn("Transactions JSON file is not in the expected format.");
-    //   }
-    // } catch (error) {
-    //   console.error("Error loading transactions from JSON:", error);
-    // }
-
-    // const entries = fs.readdirSync(transactionsPath, { withFileTypes: true });
-    // for (const entry of entries) {
-    //   const fname = entry.name;
-    //   if (fname.match(/^[A-Z][A-Z][A-Z0-9]{10}\.csv$/)) {
-    //     const csvPath = path.join(transactionsPath, fname);
-
-    //     const value = fs.readFileSync(csvPath, { encoding: "utf8" });
-    //     const parsedData = parseTransactionData(value);
-    //     parsedData.sort(
-    //       (a, b) =>
-    //         getDateObject(a.executionDate).getTime() -
-    //         getDateObject(b.executionDate).getTime()
-    //     );
-
-    //     for (const t of parsedData) {
-    //       const { isin } = t;
-
-    //       const security = securityRepository.getBy("isin", isin);
-    //       if (security) {
-    //         const tx = convertToTransaction(t);
-    //         if (isin in stockSplits) {
-    //           stockSplits[isin].forEach((splitData) => {
-    //             const { splitDate, splitRatio } = splitData;
-    //             if (tx.date < splitDate) {
-    //               tx.shares = tx.shares * splitRatio;
-    //               tx.quote = tx.quote / splitRatio;
-    //             }
-    //           });
-    //         }
-    //         portfolio.addTransaction(security, tx);
-    //       }
-    //     }
-    //   }
-    // }
-
     console.log(">>> Evaluating all Portfolio holdings...\n");
-    for (const holding of appdata.portfolio.getAllHoldings()) {
+    this.evaluate(appdata);
+
+    console.log(">>> Saving application data...");
+    await this.saveApplicationData(appdata);
+
+    console.log(">>> Done.\n");
+  }
+
+  private evaluate(appdata: ApplicationRepository): void {
+    const portfolio = Portfolio.reconstruct(appdata);
+
+    for (const holding of portfolio.getAllHoldings()) {
       console.log(holding.toString());
 
       const isin = holding.security.isin;
 
+      const operations = appdata.operations.get(isin);
+
+      if (!operations) {
+        console.warn(`No operations stored for ISIN ${isin}. Ignoring...`);
+        continue;
+      }
+
       const latestQuote = appdata.quotes.getLatestQuote(isin);
-
-      const transactions = holding.getTransactions();
-
       if (latestQuote) {
         console.log(
           `> Latest Quote: ${formatCurrency(
@@ -126,12 +77,12 @@ class App {
 
       const xirrGross = calculateAnnualizedReturns(
         "gross",
-        transactions,
+        operations,
         latestQuote
       );
       const xirrNet = calculateAnnualizedReturns(
         "net",
-        transactions,
+        operations,
         latestQuote
       );
       console.log(
@@ -142,71 +93,71 @@ class App {
 
       console.log();
     }
-
-    await this.saveApplicationData(appdata);
   }
 
-  private async loadApplicationData(): Promise<ApplicationData> {
-    console.log(">>> Loading application data...");
-
+  private async loadApplicationData(): Promise<ApplicationRepository> {
     const jsonPath = this.createFilePath(this.config.jsonAppdataFileName);
     const appdata = await readFile(jsonPath, "utf8").then(JSON.parse);
-    const parsed = ApplicationData.fromJSON(appdata);
-
-    console.log(">>> Done.\n");
-
-    return parsed;
+    return ApplicationRepository.fromJSON(appdata);
   }
 
-  private async saveApplicationData(appdata: ApplicationData): Promise<void> {
-    console.log(">>> Saving application data...");
-
+  private async saveApplicationData(
+    appdata: ApplicationRepository
+  ): Promise<void> {
     const jsonPath = this.createFilePath(this.config.jsonAppdataFileName);
     writeFile(jsonPath, JSON.stringify(appdata.toJSON(), null, 2), {
       encoding: "utf8",
     });
-
-    console.log(">>> Done.\n");
   }
 
   private async applyUpdatesFromRawData(
-    appdata: ApplicationData
+    appdata: ApplicationRepository
   ): Promise<void> {
+    await this.applySecuritiesFromRawData(appdata);
     await this.applyTransactionsFromRawData(appdata);
+    await this.applyStockSplitsFromRawData(appdata);
     await this.applyQuotesFromRawData(appdata);
   }
 
-  private async applyTransactionsFromRawData(
-    appdata: ApplicationData
+  private async applySecuritiesFromRawData(
+    appdata: ApplicationRepository
   ): Promise<void> {
-    const transactionUpdates = await this.loadTransactionsFromRawData(
-      appdata.securities
-    );
+    const jsonPath = this.createFilePath(this.config.jsonStockMetadataFileName);
+    const rawStockData = await readFile(jsonPath, "utf8").then(JSON.parse);
 
-    for (const isin in transactionUpdates.data) {
-      const security = appdata.securities.getBy("isin", isin);
-      if (!security) {
-        throw new Error(`Security with ISIN ${isin} not found`);
+    const validatedData = RawSecurityListSchema.parse(rawStockData);
+    validatedData.forEach(({ isin, nsin, name }) => {
+      appdata.securities.add(isin, nsin, name);
+    });
+  }
+
+  private async applyTransactionsFromRawData(
+    appdata: ApplicationRepository
+  ): Promise<void> {
+    const transactionUpdates = await this.loadTransactionsFromRawData();
+
+    for (const isin in transactionUpdates.repository) {
+      if (!appdata.securities.getBy("isin", isin)) {
+        // ignore any transactions for securities not currently stored
+        continue;
       }
 
-      const transactions = transactionUpdates.getTransactions(isin);
-      transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
+      const rawTransactions = transactionUpdates.repository[isin];
 
-      for (const tx of transactions) {
-        appdata.portfolio.addTransaction(security, tx);
-      }
+      rawTransactions.forEach((rawTransaction) => {
+        const transaction = convertToTransaction(rawTransaction);
+        appdata.operations.add(isin, transaction);
+      });
     }
   }
 
-  private async loadTransactionsFromRawData(
-    securities: SecurityRepository
-  ): Promise<TransactionRepository> {
+  private async loadTransactionsFromRawData(): Promise<RawTransactionRepository> {
     const csvRawDataPath = path.join(
       resolvePath(this.config.dataDirectory),
       this.config.rawTransactionDataDirName
     );
 
-    const updateRepository = new TransactionRepository();
+    const rawDataRepository = new RawTransactionRepository();
 
     const files = await readdir(csvRawDataPath, { withFileTypes: true });
 
@@ -215,46 +166,58 @@ class App {
         continue;
       }
 
-      const csvPath = path.join(csvRawDataPath, csvFile.name);
+      const value = await readFile(
+        path.join(csvRawDataPath, csvFile.name),
+        "utf8"
+      );
 
-      const value = await readFile(csvPath, "utf8");
-
-      const parsedData = parseTransactionData(value);
-
-      for (const t of parsedData) {
-        const security = securities.getBy("isin", t.isin);
-        if (security) {
-          // ignore transactions for ISINs not in the stock universe
-          const tx = convertToTransaction(t);
-          updateRepository.add(security.isin, tx);
-        }
-      }
+      const parsedData = parseRawTransactionData(value);
+      rawDataRepository.addAll(parsedData);
     }
 
-    return updateRepository;
+    return rawDataRepository;
+  }
+
+  private async applyStockSplitsFromRawData(
+    appdata: ApplicationRepository
+  ): Promise<void> {
+    const jsonPath = this.createFilePath(this.config.jsonStockSplitsFileName);
+    const rawSplitsData = await readFile(jsonPath, "utf8").then(JSON.parse);
+
+    const validatedData = RawStockSplitRecordSchema.parse(rawSplitsData);
+    Object.entries(validatedData).forEach(([isin, splits]) => {
+      splits.forEach(({ splitDate, splitRatio }) => {
+        appdata.operations.add(isin, new StockSplit(splitDate, splitRatio));
+      });
+    });
   }
 
   private async applyQuotesFromRawData(
-    appdata: ApplicationData
+    appdata: ApplicationRepository
   ): Promise<void> {
-    const quoteUpdates = await this.loadQuotesFromRawData(appdata.securities);
+    const quoteUpdates = await this.loadQuotesFromRawData();
 
-    for (const isin in quoteUpdates.quotes) {
-      for (const quoteItem of quoteUpdates.quotes[isin]) {
-        appdata.quotes.add(isin, quoteItem.date, quoteItem.price);
+    for (const [nsin, rawQuotes] of Object.entries(quoteUpdates.repository)) {
+      const security = appdata.securities.getBy("nsin", nsin);
+      if (!security) {
+        console.warn(
+          `Could not convert NSIN ${nsin} to ISIN: security not found. Ignoring...`
+        );
+        continue;
       }
+
+      const quoteData = convertToQuoteData(rawQuotes);
+      appdata.quotes.addAll(security.isin, quoteData.items);
     }
   }
 
-  private async loadQuotesFromRawData(
-    securities: SecurityRepository
-  ): Promise<QuoteRepository> {
+  private async loadQuotesFromRawData(): Promise<RawQuoteDataRepository> {
     const csvRawDataPath = path.join(
       resolvePath(this.config.dataDirectory),
       this.config.rawQuoteDataDirName
     );
 
-    const updateRepository = new QuoteRepository();
+    const updateRepository = new RawQuoteDataRepository();
 
     const files = await readdir(csvRawDataPath, { withFileTypes: true });
 
@@ -263,23 +226,13 @@ class App {
         continue;
       }
 
-      const csvPath = path.join(csvRawDataPath, csvFile.name);
+      const value = await readFile(
+        path.join(csvRawDataPath, csvFile.name),
+        "utf8"
+      );
 
-      const value = await readFile(csvPath, "utf8");
-
-      const quoteData = convertToQuoteData(parseQuoteData(value));
-      const { nsin, items } = quoteData;
-
-      const security = securities.getBy("nsin", nsin);
-      if (security) {
-        for (const item of items) {
-          updateRepository.add(security.isin, item.date, item.price);
-        }
-      } else {
-        console.warn(
-          `Parsed quote data for unknown security (NSIN = ${nsin}). Skipping...`
-        );
-      }
+      const parsedData = parseRawQuoteData(value);
+      updateRepository.add(parsedData);
     }
 
     return updateRepository;

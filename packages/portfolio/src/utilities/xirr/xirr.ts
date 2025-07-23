@@ -1,4 +1,11 @@
-import { QuoteItem, Transaction } from "@csfin-toolkit/core";
+import {
+  BuyTransaction,
+  PortfolioOperation,
+  QuoteItem,
+  SellTransaction,
+  SortedList,
+  StockSplit,
+} from "@csfin-toolkit/core";
 import { CashFlow } from "./types";
 
 const MAX_ITERATIONS = 100;
@@ -9,36 +16,40 @@ const TOLERANCE = 1e-6;
  * (XIRR) method for a portfolio position or even a complete portfolio.
  *
  * @param type Can be `net` or `gross`. Specifies whether fees and taxes should be included in the XIRR evaluation (`net`) or not (`gross`).
- * @param transactions The list of transactions to be used in the evalution.
+ * @param operations The list of operations to be used in the evalution.
  * @param quoteItem If the position currently holds shares, a quote item consisting of the latest price and the accompanying date must be specified.
  * @returns The annualised return for this position.
  */
 const calculateAnnualizedReturns = (
   type: "net" | "gross",
-  transactions: Transaction[],
+  operations: SortedList<PortfolioOperation>,
   quoteItem: QuoteItem | null = null
 ): number => {
-  if (transactions.length === 0) {
+  if (operations.size === 0) {
     throw new Error("Transaction list cannot be empty");
   }
 
-  const finalShareCount = transactions.reduce(
-    (total, { transactionType: type, shares }) => {
-      if (type === "BUY") {
-        return total + shares;
-      }
+  const finalShareCount = operations.toArray().reduce((total, operation) => {
+    if (operation.operationType === "BUY") {
+      const { shares } = operation as BuyTransaction;
+      return total + shares;
+    }
 
-      if (type === "SELL") {
-        if (shares - total > TOLERANCE) {
-          throw new Error("Cannot sell more shares than owned");
-        }
-        return total - shares;
+    if (operation.operationType === "SELL") {
+      const { shares } = operation as SellTransaction;
+      if (shares - total > TOLERANCE) {
+        throw new Error("Cannot sell more shares than owned");
       }
+      return total - shares;
+    }
 
-      throw new Error(`Invalid transaction type: ${type}`);
-    },
-    0.0
-  );
+    if (operation.operationType === "SPLIT") {
+      const { splitRatio } = operation as StockSplit;
+      return total * splitRatio;
+    }
+
+    return total;
+  }, 0.0);
 
   if (finalShareCount > TOLERANCE && quoteItem == null) {
     throw Error(
@@ -47,7 +58,7 @@ const calculateAnnualizedReturns = (
   }
 
   // convert the transactions to cashflows, then sort the cashflows by date in ascending order
-  const cashflows: CashFlow[] = generateCashflows(type, transactions);
+  const cashflows: CashFlow[] = generateCashflows(type, operations);
   if (finalShareCount > TOLERANCE) {
     const item = quoteItem as QuoteItem;
     cashflows.push({
@@ -137,27 +148,22 @@ const calculateAnnualizedReturns = (
 
 const generateCashflows = (
   evalType: "net" | "gross",
-  transactions: Transaction[]
+  operations: SortedList<PortfolioOperation>
 ): CashFlow[] =>
-  transactions.map(
-    ({ transactionType: type, date, quote, shares, fees, taxes }) => {
-      const multiplier = ((): number => {
-        if (type === "BUY") {
-          return -1;
-        }
-        if (type === "SELL") {
-          return 1;
-        }
-        throw new Error(`Invalid transaction type: ${type}`);
-      })();
+  operations
+    .toArray()
+    .filter((operation): operation is BuyTransaction | SellTransaction =>
+      ["BUY", "SELL"].includes(operation.operationType)
+    )
+    .map(({ operationType, date, shares, pricePerShare, fees, taxes }) => {
+      const multiplier = operationType === "BUY" ? -1 : 1;
 
       return {
         cashDate: date,
         cashAmount:
-          multiplier * shares * quote -
+          multiplier * shares * pricePerShare -
           (evalType === "net" ? fees + taxes : 0.0),
       };
-    }
-  );
+    });
 
 export { calculateAnnualizedReturns };

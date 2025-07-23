@@ -12,7 +12,7 @@ const calculateGenericChecksum = (...data: ChecksumInput[]): string => {
     })
     .join(":");
 
-  return crc32(stringToHash).toString(16).padStart(16, "0");
+  return crc32(stringToHash).toString(16).padStart(8, "0");
 };
 
 export { calculateGenericChecksum };

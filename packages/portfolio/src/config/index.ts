@@ -6,6 +6,8 @@ dotenv.config();
 const envVarsSchema = z.object({
   CSFIN_DATA_DIRECTORY: z.string(),
   JSON_APPDATA_FILE_NAME: z.string().optional(),
+  JSON_STOCK_METADATA_FILE_NAME: z.string().optional(),
+  JSON_STOCK_SPLITS_FILE_NAME: z.string().optional(),
   RAW_TRANSACTION_DATA_DIR_NAME: z.string().optional(),
   RAW_QUOTE_DATA_DIR_NAME: z.string().optional(),
 });
@@ -13,6 +15,8 @@ const envVarsSchema = z.object({
 interface ConfigurationSchema {
   dataDirectory: string;
   jsonAppdataFileName: string;
+  jsonStockMetadataFileName: string;
+  jsonStockSplitsFileName: string;
   rawTransactionDataDirName: string;
   rawQuoteDataDirName: string;
 }
@@ -37,7 +41,12 @@ class Config {
 
     this.config = {
       dataDirectory: envVars.CSFIN_DATA_DIRECTORY,
-      jsonAppdataFileName: envVars.JSON_APPDATA_FILE_NAME ?? "appdata.json",
+      jsonAppdataFileName:
+        envVars.JSON_APPDATA_FILE_NAME ?? "application-data.json",
+      jsonStockMetadataFileName:
+        envVars.JSON_STOCK_METADATA_FILE_NAME ?? "stock-metadata.json",
+      jsonStockSplitsFileName:
+        envVars.JSON_STOCK_SPLITS_FILE_NAME ?? "stock-split-data.json",
       rawTransactionDataDirName:
         envVars.RAW_TRANSACTION_DATA_DIR_NAME ?? "transactions",
       rawQuoteDataDirName: envVars.RAW_QUOTE_DATA_DIR_NAME ?? "quotes",

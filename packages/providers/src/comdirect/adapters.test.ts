@@ -20,23 +20,19 @@ describe("Test Suite for adapters", () => {
     it("should pass basic tests with a BUY transaction", () => {
       const tx = convertToTransaction(rt);
       expect(tx.date).toStrictEqual(new Date("2025-07-15"));
-      expect(tx.stockExchange).toBeNull();
       expect(tx.fees).toBeCloseTo(12.34, 6);
-      expect(tx.quote).toStrictEqual(1000);
+      expect(tx.pricePerShare).toStrictEqual(1000);
       expect(tx.shares).toStrictEqual(10);
       expect(tx.taxes).toStrictEqual(0);
-      expect(tx.transactionType).toStrictEqual("BUY");
     });
 
     it("should pass basic tests with a SELL transaction", () => {
       const tx = convertToTransaction({ ...rt, type: "Verkauf" });
       expect(tx.date).toStrictEqual(new Date("2025-07-15"));
-      expect(tx.stockExchange).toBeNull();
       expect(tx.fees).toBeCloseTo(12.34, 6);
-      expect(tx.quote).toStrictEqual(1000);
+      expect(tx.pricePerShare).toStrictEqual(1000);
       expect(tx.shares).toStrictEqual(10);
       expect(tx.taxes).toStrictEqual(0);
-      expect(tx.transactionType).toStrictEqual("SELL");
     });
 
     it("should correctly throw an exception when encountering invalid type", () => {
