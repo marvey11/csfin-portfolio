@@ -15,7 +15,14 @@ const deserializeOperation = (data: unknown): PortfolioOperation => {
 
   switch (validatedData.operationType) {
     case "DIVIDEND": {
-      return new Dividend(date, validatedData.dividendPerShare);
+      const { dividendPerShare, applicableShares, exchangeRate } =
+        validatedData;
+      return new Dividend(
+        date,
+        dividendPerShare,
+        applicableShares,
+        exchangeRate
+      );
     }
 
     case "SPLIT": {
@@ -23,22 +30,13 @@ const deserializeOperation = (data: unknown): PortfolioOperation => {
     }
 
     case "BUY": {
-      return new BuyTransaction(
-        date,
-        validatedData.shares,
-        validatedData.pricePerShare,
-        validatedData.fees
-      );
+      const { shares, pricePerShare, fees } = validatedData;
+      return new BuyTransaction(date, shares, pricePerShare, fees);
     }
 
     case "SELL": {
-      return new SellTransaction(
-        date,
-        validatedData.shares,
-        validatedData.pricePerShare,
-        validatedData.fees,
-        validatedData.taxes
-      );
+      const { shares, pricePerShare, fees, taxes } = validatedData;
+      return new SellTransaction(date, shares, pricePerShare, fees, taxes);
     }
   }
 };

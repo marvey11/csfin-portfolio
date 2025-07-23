@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { QuoteItemSchema } from "./quote";
+import { IsinStringSchema } from "./zod-schema-types";
 
 const QuoteRepositorySchema = z.record(
-  z.string().length(12),
+  IsinStringSchema,
   z.array(QuoteItemSchema)
 );
 

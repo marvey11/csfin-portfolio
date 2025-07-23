@@ -34,6 +34,8 @@ export class PortfolioHolding {
 
   totalTaxes: number;
 
+  totalDividends: number;
+
   totalRealizedGains: number;
 
   constructor(security: Security) {
@@ -45,6 +47,8 @@ export class PortfolioHolding {
 
     this.totalFees = 0.0;
     this.totalTaxes = 0.0;
+
+    this.totalDividends = 0.0;
 
     this.totalRealizedGains = 0.0;
   }
@@ -76,18 +80,19 @@ export class PortfolioHolding {
 
   toString(): string {
     return (
-      `- ${this.security.name} [ISIN: ${this.security.isin} | NSIN: ${this.security.nsin}]\n` +
-      `  Total Number of Shares: ${this.shares.toFixed(3)}\n` +
-      `  Total Cost Basis: ${formatCurrency(
+      `-> ${this.security.name} -- ISIN: ${this.security.isin} | NSIN: ${this.security.nsin}\n` +
+      `   Total Number of Shares: ${this.shares.toFixed(3)}\n` +
+      `   Total Cost Basis: ${formatCurrency(
         this.totalCostBasis
-      )} (incl. fees: ${formatCurrency(this.totalFees)})\n` +
-      `  Average Price Per Share: ${formatCurrency(
+      )} (incl. ${formatCurrency(this.totalFees)} fees)\n` +
+      `   Average Price Per Share: ${formatCurrency(
         this.averagePricePerShare
       )} ` +
       `(nominal: ${formatCurrency(
         this.nominalPurchasePrice / this.shares
       )})\n` +
-      `  Total Realized Gains: ${formatCurrency(this.totalRealizedGains)}`
+      `   Total Dividends: ${formatCurrency(this.totalDividends)}\n` +
+      `   Total Realized Gains: ${formatCurrency(this.totalRealizedGains)}`
     );
   }
 }

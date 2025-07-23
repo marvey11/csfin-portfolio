@@ -1,12 +1,13 @@
 import { z } from "zod";
+import { DateStringSchema, IsinStringSchema } from "../zod-schema-types";
 
 const RawStockSplitSchema = z.object({
-  splitDate: z.string(),
-  splitRatio: z.number(),
+  splitDate: DateStringSchema,
+  splitRatio: z.number().positive(),
 });
 
 const RawStockSplitRecordSchema = z.record(
-  z.string().length(12),
+  IsinStringSchema,
   z.array(RawStockSplitSchema)
 );
 

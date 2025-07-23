@@ -6,7 +6,7 @@ describe("Test Suite for the Dividend operataion class", () => {
   let baseDividend: Dividend;
 
   beforeEach(() => {
-    baseDividend = new Dividend("2023-01-01", 100);
+    baseDividend = new Dividend("2023-01-01", 100, 10);
   });
 
   it("should pass basic tests", () => {
@@ -19,10 +19,10 @@ describe("Test Suite for the Dividend operataion class", () => {
     const errorMessage = "Dividend per share must be greater than zero.";
 
     expect(() => {
-      new Dividend("2023-01-01", 0);
+      new Dividend("2023-01-01", 0, 10);
     }).toThrow(errorMessage);
     expect(() => {
-      new Dividend("2023-01-01", -1);
+      new Dividend("2023-01-01", -1, 10);
     }).toThrow(errorMessage);
   });
 

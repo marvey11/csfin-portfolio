@@ -1,7 +1,6 @@
 import { ApplicationRepository } from "./ApplicationRepository";
 import { BuyTransaction } from "./BuyTransaction";
 import { OperationRepository } from "./OperationRepository";
-import { Portfolio } from "./Portfolio";
 import { QuoteItem } from "./QuoteItem";
 import { QuoteRepository } from "./QuoteRepository";
 import { SecurityRepository } from "./SecurityRepository";
@@ -16,7 +15,14 @@ describe("Test Suite for the ApplicationRepository class", () => {
     quotes = new QuoteRepository();
     operations = new OperationRepository();
 
-    securities.add("DE1234567890", "123456", "Fictional Inc.");
+    securities.add({
+      isin: "DE1234567890",
+      nsin: "123456",
+      name: "Fictional Inc.",
+      country: "Germany",
+      countryCode: "DE",
+      currency: "EUR",
+    });
     quotes.add("DE1234567890", new QuoteItem("2023-01-01", 100));
     operations.add(
       "DE1234567890",
@@ -25,13 +31,7 @@ describe("Test Suite for the ApplicationRepository class", () => {
   });
 
   it("should pass basic tests", () => {
-    const appRepo = new ApplicationRepository(
-      securities,
-      quotes,
-      operations,
-      // Portfolio.reconstruct is tested separately
-      null as unknown as Portfolio
-    );
+    const appRepo = new ApplicationRepository(securities, quotes, operations);
 
     expect(appRepo.securities).toBe(securities);
     expect(appRepo.quotes).toBe(quotes);
@@ -40,13 +40,7 @@ describe("Test Suite for the ApplicationRepository class", () => {
 
   describe("serialise/deserialise", () => {
     it("should serialise and deserialise correctly", () => {
-      const appRepo = new ApplicationRepository(
-        securities,
-        quotes,
-        operations,
-        // portfolio not necessary
-        null as unknown as Portfolio
-      );
+      const appRepo = new ApplicationRepository(securities, quotes, operations);
 
       const baseJSON = appRepo.toJSON();
       const object = ApplicationRepository.fromJSON(baseJSON);

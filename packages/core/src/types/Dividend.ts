@@ -1,16 +1,19 @@
-import {
-  calculateGenericChecksum,
-  formatCurrency,
-  formatNormalizedDate,
-} from "../utils";
+import { calculateGenericChecksum } from "../utils";
 import { PortfolioHolding } from "./PortfolioHolding";
 import { PortfolioOperation } from "./PortfolioOperation";
 import { DividendData } from "./schema";
 
 class Dividend extends PortfolioOperation {
   dividendPerShare: number;
+  applicableShares: number;
+  exchangeRate: number;
 
-  constructor(date: Date | string, dividendPerShare: number) {
+  constructor(
+    date: Date | string,
+    dividendPerShare: number,
+    applicableShares: number,
+    exchangeRate = 1
+  ) {
     if (dividendPerShare <= 0) {
       throw new Error("Dividend per share must be greater than zero.");
     }
@@ -18,6 +21,8 @@ class Dividend extends PortfolioOperation {
     super(date);
 
     this.dividendPerShare = dividendPerShare;
+    this.applicableShares = applicableShares;
+    this.exchangeRate = exchangeRate;
   }
 
   get operationType(): string {
@@ -25,15 +30,18 @@ class Dividend extends PortfolioOperation {
   }
 
   override apply(holding: PortfolioHolding): void {
-    console.log(
-      `Total dividend of ${formatCurrency(
-        holding.shares * this.dividendPerShare
-      )} paid to ${holding.security.isin} on ${formatNormalizedDate(this.date)}`
-    );
+    holding.totalDividends +=
+      (this.applicableShares * this.dividendPerShare) /
+      (this.exchangeRate ?? 1);
   }
 
   override clone(): Dividend {
-    return new Dividend(new Date(this.date.getTime()), this.dividendPerShare);
+    return new Dividend(
+      new Date(this.date.getTime()),
+      this.dividendPerShare,
+      this.applicableShares,
+      this.exchangeRate
+    );
   }
 
   override toString(): string {
@@ -45,6 +53,8 @@ class Dividend extends PortfolioOperation {
       ...super.toJSON(),
       operationType: "DIVIDEND",
       dividendPerShare: this.dividendPerShare,
+      applicableShares: this.applicableShares,
+      exchangeRate: this.exchangeRate,
     };
   }
 

@@ -1,15 +1,16 @@
 import { z } from "zod";
+import { DateStringSchema } from "./zod-schema-types";
 
 const BaseOperationSchema = z.object({
   operationType: z.string(),
-  date: z.string(),
+  date: DateStringSchema,
   checksum: z.string().length(8),
 });
 
 const BaseTransactionSchema = BaseOperationSchema.extend({
-  shares: z.number(),
-  pricePerShare: z.number(),
-  fees: z.number(),
+  shares: z.number().positive(),
+  pricePerShare: z.number().positive(),
+  fees: z.number().nonnegative(),
 });
 
 const BuyTransactionSchema = BaseTransactionSchema.extend({
@@ -18,17 +19,19 @@ const BuyTransactionSchema = BaseTransactionSchema.extend({
 
 const SellTransactionSchema = BaseTransactionSchema.extend({
   operationType: z.literal("SELL"),
-  taxes: z.number(),
+  taxes: z.number().nonnegative(),
 });
 
 const StockSplitSchema = BaseOperationSchema.extend({
   operationType: z.literal("SPLIT"),
-  splitRatio: z.number(),
+  splitRatio: z.number().positive(),
 });
 
 const DividendSchema = BaseOperationSchema.extend({
   operationType: z.literal("DIVIDEND"),
-  dividendPerShare: z.number(),
+  dividendPerShare: z.number().positive(),
+  applicableShares: z.number().positive(),
+  exchangeRate: z.number().positive().optional().default(1),
 });
 
 const OperationDataSchema = z.discriminatedUnion("operationType", [

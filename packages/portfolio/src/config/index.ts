@@ -7,6 +7,7 @@ const envVarsSchema = z.object({
   CSFIN_DATA_DIRECTORY: z.string(),
   JSON_APPDATA_FILE_NAME: z.string().optional(),
   JSON_STOCK_METADATA_FILE_NAME: z.string().optional(),
+  JSON_DIVIDEND_DATA_FILE_NAME: z.string().optional(),
   JSON_STOCK_SPLITS_FILE_NAME: z.string().optional(),
   RAW_TRANSACTION_DATA_DIR_NAME: z.string().optional(),
   RAW_QUOTE_DATA_DIR_NAME: z.string().optional(),
@@ -16,6 +17,7 @@ interface ConfigurationSchema {
   dataDirectory: string;
   jsonAppdataFileName: string;
   jsonStockMetadataFileName: string;
+  jsonDividendDataFileName: string;
   jsonStockSplitsFileName: string;
   rawTransactionDataDirName: string;
   rawQuoteDataDirName: string;
@@ -45,6 +47,8 @@ class Config {
         envVars.JSON_APPDATA_FILE_NAME ?? "application-data.json",
       jsonStockMetadataFileName:
         envVars.JSON_STOCK_METADATA_FILE_NAME ?? "stock-metadata.json",
+      jsonDividendDataFileName:
+        envVars.JSON_DIVIDEND_DATA_FILE_NAME ?? "dividend-data.json",
       jsonStockSplitsFileName:
         envVars.JSON_STOCK_SPLITS_FILE_NAME ?? "stock-split-data.json",
       rawTransactionDataDirName:

@@ -1,3 +1,5 @@
+import { Currency } from "./Currency";
+
 interface Security {
   /** The security's International Securities Identification Number. */
   isin: string;
@@ -7,6 +9,15 @@ interface Security {
 
   /** The stock's name. */
   name: string;
+
+  /** The stock's country of origin. */
+  country: string;
+
+  /** The stock's two-letter country code, like DE, FR, US. */
+  countryCode: string;
+
+  /** The stock's currency. */
+  currency: Currency;
 }
 
 export type { Security };

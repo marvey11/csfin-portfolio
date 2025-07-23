@@ -1,3 +1,4 @@
+import { formatCurrency } from "../utils";
 import { ApplicationRepository } from "./ApplicationRepository";
 import { PortfolioHolding } from "./PortfolioHolding";
 import { PortfolioOperation } from "./PortfolioOperation";
@@ -51,6 +52,45 @@ class Portfolio {
 
   getAllHoldings(): PortfolioHolding[] {
     return Array.from(this.holdings.values());
+  }
+
+  get totalCostBasis(): number {
+    return this.getAllHoldings().reduce(
+      (total, holding) => total + holding.totalCostBasis,
+      0
+    );
+  }
+
+  get totalFees(): number {
+    return this.getAllHoldings().reduce(
+      (total, holding) => total + holding.totalFees,
+      0
+    );
+  }
+
+  get totalDividends(): number {
+    return this.getAllHoldings().reduce(
+      (total, holding) => total + holding.totalDividends,
+      0
+    );
+  }
+
+  get totalRealizedGains(): number {
+    return this.getAllHoldings().reduce(
+      (total, holding) => total + holding.totalRealizedGains,
+      0
+    );
+  }
+
+  toString(): string {
+    return (
+      `-> Number of Holdings: ${this.holdings.size}\n` +
+      `   Total Cost Basis: ${formatCurrency(
+        this.totalCostBasis
+      )} (incl. ${formatCurrency(this.totalFees)} fees)\n` +
+      `   Total Dividends: ${formatCurrency(this.totalDividends)}\n` +
+      `   Total Realized Gains: ${formatCurrency(this.totalRealizedGains)}\n`
+    );
   }
 }
 

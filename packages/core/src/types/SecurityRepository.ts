@@ -18,7 +18,13 @@ const isSecurity = (obj: unknown): obj is Security => {
     "nsin" in potential &&
     typeof potential.nsin === "string" &&
     "name" in potential &&
-    typeof potential.name === "string"
+    typeof potential.name === "string" &&
+    "country" in potential &&
+    typeof potential.country === "string" &&
+    "countryCode" in potential &&
+    typeof potential.countryCode === "string" &&
+    "currency" in potential &&
+    typeof potential.currency === "string"
   );
 };
 
@@ -51,31 +57,20 @@ class SecurityRepository {
   /**
    * Adds a new security to the repository.
    * The security will not be added if a security with the same ISIN or NSIN already exists.
+   *
    * @param security The security object to add.
    */
-  add(security: Security): void;
-  /**
-   * Adds a new security to the repository.
-   * The security will not be added if a security with the same ISIN or NSIN already exists.
-   * @param isin The security's ISIN.
-   * @param nsin The security's NSIN.
-   * @param name The security's name.
-   */
-  add(isin: string, nsin: string, name: string): void;
-  add(securityOrISIN: Security | string, nsin?: string, name?: string) {
-    if (typeof securityOrISIN === "object" && isSecurity(securityOrISIN)) {
-      const validatedData = SecuritySchema.parse(securityOrISIN);
-      this.checkBeforeAdding(validatedData);
-    } else if (
-      typeof securityOrISIN === "string" &&
-      typeof nsin === "string" &&
-      typeof name === "string"
-    ) {
-      this.checkBeforeAdding({ isin: securityOrISIN, nsin, name });
-    } else {
-      throw new Error(
-        "Invalid arguments for add. Expected Security object or the security's ISIN, NSIN, and name parameters."
-      );
+  add(security: Security): void {
+    if (!isSecurity(security)) {
+      throw new Error("Invalid arguments for add.");
+    }
+
+    const validatedData = SecuritySchema.parse(security);
+
+    const { isin, nsin } = validatedData;
+    if (!this.has("isin", isin) && !this.has("nsin", nsin)) {
+      // only add if not yet stored
+      this.securities.push(security);
     }
   }
 
@@ -136,20 +131,6 @@ class SecurityRepository {
    */
   private findIndexBy(key: keyof Security, value: string): number {
     return this.securities.findIndex((security) => security[key] === value);
-  }
-
-  /**
-   * Before adding a new security, checks whether it is already stored (based on the security's ISIN or NSIN).
-   * Will ignore the security if it already is stored in this repository.
-   *
-   * @param security The security to add.
-   */
-  private checkBeforeAdding(security: Security) {
-    const { isin, nsin } = security;
-    if (!this.has("isin", isin) && !this.has("nsin", nsin)) {
-      // only add if not yet stored
-      this.securities.push(security);
-    }
   }
 }
 

@@ -3,16 +3,20 @@ import { Dividend } from "./Dividend";
 import { OperationRepository } from "./OperationRepository";
 import { PortfolioHolding } from "./PortfolioHolding";
 import { PortfolioOperation } from "./PortfolioOperation";
+import { Security } from "./Security";
 import { SellTransaction } from "./SellTransaction";
 import { StockSplit } from "./StockSplit";
 import { SortedList } from "./utility";
 
 describe("Test Suite for the PortfolioHolding class", () => {
   const isin = "DE1234567890";
-  const security = {
+  const security: Security = {
     isin,
     nsin: "123456",
     name: "Fictional Inc.",
+    country: "Germany",
+    countryCode: "DE",
+    currency: "EUR",
   };
 
   let holding: PortfolioHolding;
@@ -104,14 +108,10 @@ describe("Test Suite for the PortfolioHolding class", () => {
       operationsRepo = new OperationRepository();
       operationsRepo.add(isin, new BuyTransaction("2023-01-01", 10, 100, 5));
       operationsRepo.add(isin, new StockSplit("2023-02-01", 2));
-      operationsRepo.add(isin, new Dividend("2023-03-01", 0.06));
+      operationsRepo.add(isin, new Dividend("2023-03-01", 0.06, 20));
     });
 
     it("should correctly build a holding from operations", () => {
-      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
-        // Do nothing
-      });
-
       const operations = operationsRepo.get(isin);
       expect(operations).toBeDefined();
 
@@ -123,10 +123,7 @@ describe("Test Suite for the PortfolioHolding class", () => {
       expect(holding.security.isin).toStrictEqual(isin);
       expect(holding.shares).toStrictEqual(20);
       expect(holding.averagePricePerShare).toBeCloseTo(50.25);
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        "Total dividend of €1.20 paid to DE1234567890 on 2023-03-01"
-      );
+      expect(holding.totalDividends).toBeCloseTo(1.2);
     });
   });
 });

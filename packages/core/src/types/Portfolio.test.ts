@@ -33,8 +33,22 @@ describe("Test Suite for the Portfolio class", () => {
 
       securitiesRepo = new SecurityRepository();
 
-      securitiesRepo.add(isin01, "123456", "Fictional Inc.");
-      securitiesRepo.add(isin02, "654321", "Fictional Corp.");
+      securitiesRepo.add({
+        isin: isin01,
+        nsin: "123456",
+        name: "Fictional Inc.",
+        country: "Germany",
+        countryCode: "DE",
+        currency: "EUR",
+      });
+      securitiesRepo.add({
+        isin: isin02,
+        nsin: "654321",
+        name: "Fictional Corp.",
+        country: "United States",
+        countryCode: "US",
+        currency: "USD",
+      });
 
       quotesRepo = new QuoteRepository();
 

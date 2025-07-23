@@ -1,5 +1,6 @@
 export { ApplicationRepository } from "./ApplicationRepository";
 export { BuyTransaction } from "./BuyTransaction";
+export { type Currency } from "./Currency";
 export { Dividend } from "./Dividend";
 export { OperationRepository } from "./OperationRepository";
 export { Portfolio } from "./Portfolio";
@@ -8,7 +9,11 @@ export { PortfolioOperation } from "./PortfolioOperation";
 export { type QuoteData } from "./QuoteData";
 export { QuoteItem } from "./QuoteItem";
 export { OperationDataSchema } from "./schema";
-export { RawSecurityListSchema, RawStockSplitRecordSchema } from "./schema/raw";
+export {
+  RawDividendRecordListSchema,
+  RawSecurityListSchema,
+  RawStockSplitRecordSchema,
+} from "./schema/raw";
 export { type Security } from "./Security";
 export { SellTransaction } from "./SellTransaction";
 export { StockSplit } from "./StockSplit";

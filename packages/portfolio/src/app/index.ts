@@ -1,9 +1,11 @@
 import {
   ApplicationRepository,
+  Dividend,
   formatCurrency,
   formatNormalizedDate,
   formatPercent,
   Portfolio,
+  RawDividendRecordListSchema,
   RawSecurityListSchema,
   RawStockSplitRecordSchema,
   resolvePath,
@@ -31,30 +33,33 @@ class App {
 
   async run() {
     console.log(
-      `>>> Reading data from directory: ${resolvePath(
+      `-- Reading data from directory: ${resolvePath(
         this.config.dataDirectory
       )}\n`
     );
 
-    console.log(">>> Loading application data...");
+    console.log("-- Loading application data...");
     const appdata = await this.loadApplicationData();
 
-    console.log(">>> Applying updates from raw data...");
+    console.log("-- Applying updates from raw data...");
     await this.applyUpdatesFromRawData(appdata);
 
-    console.log(">>> Evaluating all Portfolio holdings...\n");
+    console.log("-- Evaluating all Portfolio holdings...\n");
     this.evaluate(appdata);
 
-    console.log(">>> Saving application data...");
+    console.log("-- Saving application data...");
     await this.saveApplicationData(appdata);
 
-    console.log(">>> Done.\n");
+    console.log("-- Done.\n");
   }
 
   private evaluate(appdata: ApplicationRepository): void {
     const portfolio = Portfolio.reconstruct(appdata);
 
-    for (const holding of portfolio.getAllHoldings()) {
+    const holdings = portfolio.getAllHoldings();
+    holdings.sort((a, b) => a.security.name.localeCompare(b.security.name));
+
+    for (const holding of holdings) {
       console.log(holding.toString());
 
       const isin = holding.security.isin;
@@ -69,7 +74,7 @@ class App {
       const latestQuote = appdata.quotes.getLatestQuote(isin);
       if (latestQuote) {
         console.log(
-          `> Latest Quote: ${formatCurrency(
+          `-- Latest Quote: ${formatCurrency(
             latestQuote.price
           )} @ ${formatNormalizedDate(latestQuote.date)}`
         );
@@ -86,13 +91,21 @@ class App {
         latestQuote
       );
       console.log(
-        `= XIRR: ${formatPercent(xirrGross)} (gross), ${formatPercent(
+        `== XIRR: ${formatPercent(xirrGross)} (gross), ${formatPercent(
           xirrNet
         )} (net)`
       );
 
       console.log();
     }
+
+    console.log(
+      "--------------------------------------------------------------------------------\n"
+    );
+    console.log(portfolio.toString());
+    console.log(
+      "--------------------------------------------------------------------------------\n"
+    );
   }
 
   private async loadApplicationData(): Promise<ApplicationRepository> {
@@ -115,6 +128,7 @@ class App {
   ): Promise<void> {
     await this.applySecuritiesFromRawData(appdata);
     await this.applyTransactionsFromRawData(appdata);
+    await this.applyDividendsFromRawData(appdata);
     await this.applyStockSplitsFromRawData(appdata);
     await this.applyQuotesFromRawData(appdata);
   }
@@ -126,8 +140,8 @@ class App {
     const rawStockData = await readFile(jsonPath, "utf8").then(JSON.parse);
 
     const validatedData = RawSecurityListSchema.parse(rawStockData);
-    validatedData.forEach(({ isin, nsin, name }) => {
-      appdata.securities.add(isin, nsin, name);
+    validatedData.forEach((security) => {
+      appdata.securities.add(security);
     });
   }
 
@@ -176,6 +190,24 @@ class App {
     }
 
     return rawDataRepository;
+  }
+
+  private async applyDividendsFromRawData(
+    appdata: ApplicationRepository
+  ): Promise<void> {
+    const jsonPath = this.createFilePath(this.config.jsonDividendDataFileName);
+    const rawDividendsData = await readFile(jsonPath, "utf8").then(JSON.parse);
+
+    const validatedData = RawDividendRecordListSchema.parse(rawDividendsData);
+    for (const rawDividendRecord of validatedData) {
+      const { isin, dividends } = rawDividendRecord;
+      dividends.forEach(({ date, dividendPerShare, shares, exchangeRate }) => {
+        appdata.operations.add(
+          isin,
+          new Dividend(date, dividendPerShare, shares, exchangeRate)
+        );
+      });
+    }
   }
 
   private async applyStockSplitsFromRawData(

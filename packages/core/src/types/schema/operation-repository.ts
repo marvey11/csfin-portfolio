@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { OperationDataSchema } from "./operation";
+import { IsinStringSchema } from "./zod-schema-types";
 
 const OperationRepositorySchema = z.record(
-  z.string().length(12),
+  IsinStringSchema,
   z.array(OperationDataSchema)
 );
 

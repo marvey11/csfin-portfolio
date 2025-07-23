@@ -1,5 +1,6 @@
 import {
   BuyTransaction,
+  Dividend,
   PortfolioOperation,
   QuoteItem,
   SellTransaction,
@@ -152,18 +153,45 @@ const generateCashflows = (
 ): CashFlow[] =>
   operations
     .toArray()
-    .filter((operation): operation is BuyTransaction | SellTransaction =>
-      ["BUY", "SELL"].includes(operation.operationType)
+    .filter(
+      (operation): operation is BuyTransaction | SellTransaction | Dividend =>
+        ["BUY", "SELL", "DIVIDEND"].includes(operation.operationType)
     )
-    .map(({ operationType, date, shares, pricePerShare, fees, taxes }) => {
-      const multiplier = operationType === "BUY" ? -1 : 1;
+    .map((operation) => {
+      const { date: cashDate, operationType } = operation;
 
-      return {
-        cashDate: date,
-        cashAmount:
-          multiplier * shares * pricePerShare -
-          (evalType === "net" ? fees + taxes : 0.0),
-      };
+      let cashAmount: number;
+
+      switch (operationType) {
+        case "BUY": {
+          const { shares, pricePerShare, fees } = operation as BuyTransaction;
+          cashAmount =
+            -1 * shares * pricePerShare - (evalType === "net" ? fees : 0.0);
+          break;
+        }
+
+        case "SELL": {
+          const { shares, pricePerShare, fees, taxes } =
+            operation as SellTransaction;
+          cashAmount =
+            shares * pricePerShare - (evalType === "net" ? fees + taxes : 0.0);
+          break;
+        }
+
+        case "DIVIDEND": {
+          const { dividendPerShare, applicableShares, exchangeRate } =
+            operation as Dividend;
+          cashAmount =
+            (dividendPerShare * applicableShares) / (exchangeRate ?? 1);
+          break;
+        }
+
+        default: {
+          throw new Error("Invalid operation type");
+        }
+      }
+
+      return { cashDate, cashAmount };
     });
 
 export { calculateAnnualizedReturns };
