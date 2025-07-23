@@ -59,7 +59,11 @@ class Dividend extends PortfolioOperation {
   }
 
   protected override calculateChecksum(): string {
-    return calculateGenericChecksum(this.date);
+    return calculateGenericChecksum(
+      this.date,
+      this.applicableShares,
+      this.dividendPerShare
+    );
   }
 }
 
