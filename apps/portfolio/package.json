@@ -1,0 +1,74 @@
+{
+  "name": "@csfin-portfolio/portfolio",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "development",
+        "options": {
+          "platform": "node",
+          "outputPath": "apps/portfolio/dist",
+          "format": [
+            "esm"
+          ],
+          "bundle": false,
+          "main": "apps/portfolio/src/main.ts",
+          "tsConfig": "apps/portfolio/tsconfig.app.json",
+          "assets": [],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "serve": {
+        "continuous": true,
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@csfin-portfolio/portfolio:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@csfin-portfolio/portfolio:build:development"
+          },
+          "production": {
+            "buildTarget": "@csfin-portfolio/portfolio:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      }
+    },
+    "tags": [
+      "scope:app",
+      "type:cli"
+    ]
+  }
+}
