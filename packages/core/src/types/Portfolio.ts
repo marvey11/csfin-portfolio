@@ -4,6 +4,9 @@ import { PortfolioHolding } from "./PortfolioHolding";
 import { PortfolioOperation } from "./PortfolioOperation";
 import { Security } from "./Security";
 
+/** Threshold for floating-point comparison */
+const TOLERANCE = 1e-6;
+
 class Portfolio {
   static reconstruct(appdata: ApplicationRepository): Portfolio {
     const portfolio = new Portfolio();
@@ -54,6 +57,12 @@ class Portfolio {
     return Array.from(this.holdings.values());
   }
 
+  getActiveHoldings(): PortfolioHolding[] {
+    return this.getAllHoldings().filter(
+      (holding) => holding.shares > TOLERANCE
+    );
+  }
+
   get totalCostBasis(): number {
     return this.getAllHoldings().reduce(
       (total, holding) => total + holding.totalCostBasis,
@@ -83,8 +92,11 @@ class Portfolio {
   }
 
   toString(): string {
+    const activeCount = this.getActiveHoldings().length;
     return (
-      `-> Number of Holdings: ${this.holdings.size}\n` +
+      `-> Number of Active Holdings: ${activeCount} (${
+        this.holdings.size - activeCount
+      } inactive})\n` +
       `   Total Cost Basis: ${formatCurrency(
         this.totalCostBasis
       )} (incl. ${formatCurrency(this.totalFees)} fees)\n` +
