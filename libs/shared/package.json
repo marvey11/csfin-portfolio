@@ -1,5 +1,5 @@
 {
-  "name": "@csfin-toolkit/portfolio",
+  "name": "@csfin-toolkit/shared",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -19,12 +19,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@csfin-toolkit/core": "*",
-    "@csfin-toolkit/providers": "*",
-    "@csfin-toolkit/shared": "*",
-    "dotenv": "^17.2.0",
-    "tslib": "^2.3.0",
-    "zod": "^4.0.5"
+    "tslib": "^2.3.0"
   },
   "devDependencies": {}
 }
