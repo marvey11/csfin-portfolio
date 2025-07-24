@@ -1,16 +1,17 @@
 import {
   BuyTransaction,
   Dividend,
+  isEffectivelyZero,
   PortfolioOperation,
   QuoteItem,
   SellTransaction,
   SortedList,
   StockSplit,
 } from "@csfin-toolkit/core";
+import { FLOATING_POINT_TOLERANCE } from "@csfin-toolkit/shared";
 import { CashFlow } from "./types";
 
 const MAX_ITERATIONS = 100;
-const TOLERANCE = 1e-6;
 
 /**
  * Evaluates the Money-Weighted Rate of Return (MWRR) using the Extended Internal Rate of Return
@@ -38,7 +39,7 @@ const calculateAnnualizedReturns = (
 
     if (operation.operationType === "SELL") {
       const { shares } = operation as SellTransaction;
-      if (shares - total > TOLERANCE) {
+      if (shares - total > FLOATING_POINT_TOLERANCE) {
         throw new Error("Cannot sell more shares than owned");
       }
       return total - shares;
@@ -52,7 +53,7 @@ const calculateAnnualizedReturns = (
     return total;
   }, 0.0);
 
-  if (finalShareCount > TOLERANCE && quoteItem == null) {
+  if (finalShareCount > FLOATING_POINT_TOLERANCE && quoteItem == null) {
     throw Error(
       "Quote Item consisting of a stock price and date must be provided if the number of stocks currently held is not zero."
     );
@@ -60,7 +61,7 @@ const calculateAnnualizedReturns = (
 
   // convert the transactions to cashflows, then sort the cashflows by date in ascending order
   const cashflows: CashFlow[] = generateCashflows(type, operations);
-  if (finalShareCount > TOLERANCE) {
+  if (finalShareCount > FLOATING_POINT_TOLERANCE) {
     const item = quoteItem as QuoteItem;
     cashflows.push({
       cashDate: item.date,
@@ -129,7 +130,7 @@ const calculateAnnualizedReturns = (
     rate = (low + high) / 2;
     const npv = getNetPresentValue(rate);
 
-    if (Math.abs(npv) < TOLERANCE) {
+    if (isEffectivelyZero(npv)) {
       return rate; // Found the rate within tolerance
     }
 
