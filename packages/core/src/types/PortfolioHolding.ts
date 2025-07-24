@@ -1,4 +1,4 @@
-import { formatCurrency } from "../utils";
+import { formatCurrency, isEffectivelyZero } from "../utils";
 import { BuyTransaction } from "./BuyTransaction";
 import { PortfolioOperation } from "./PortfolioOperation";
 import { Security } from "./Security";
@@ -89,7 +89,9 @@ export class PortfolioHolding {
         this.averagePricePerShare
       )} ` +
       `(nominal: ${formatCurrency(
-        this.nominalPurchasePrice / this.shares
+        isEffectivelyZero(this.shares)
+          ? 0
+          : this.nominalPurchasePrice / this.shares
       )})\n` +
       `   Total Dividends: ${formatCurrency(this.totalDividends)}\n` +
       `   Total Realized Gains: ${formatCurrency(this.totalRealizedGains)}`
