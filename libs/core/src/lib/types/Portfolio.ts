@@ -64,31 +64,19 @@ class Portfolio {
   }
 
   get totalCostBasis(): number {
-    return this.getAllHoldings().reduce(
-      (total, holding) => total + holding.totalCostBasis,
-      0
-    );
+    return this.getSumOverHoldings("totalCostBasis");
   }
 
   get totalFees(): number {
-    return this.getAllHoldings().reduce(
-      (total, holding) => total + holding.totalFees,
-      0
-    );
+    return this.getSumOverHoldings("totalFees");
   }
 
   get totalDividends(): number {
-    return this.getAllHoldings().reduce(
-      (total, holding) => total + holding.totalDividends,
-      0
-    );
+    return this.getSumOverHoldings("totalDividends");
   }
 
   get totalRealizedGains(): number {
-    return this.getAllHoldings().reduce(
-      (total, holding) => total + holding.totalRealizedGains,
-      0
-    );
+    return this.getSumOverHoldings("totalRealizedGains");
   }
 
   toString(): string {
@@ -101,8 +89,21 @@ class Portfolio {
       `   Total Cost Basis: ${formatCurrency(
         this.totalCostBasis
       )} (incl. ${formatCurrency(this.totalFees)} fees)\n` +
-      `   Total Dividends: ${formatCurrency(this.totalDividends)}\n` +
-      `   Total Realized Gains: ${formatCurrency(this.totalRealizedGains)}\n`
+      `   Total Realized Gains: ${formatCurrency(this.totalRealizedGains)}\n` +
+      `   Total Dividends: ${formatCurrency(this.totalDividends)}\n`
+    );
+  }
+
+  private getSumOverHoldings<
+    K extends
+      | "totalCostBasis"
+      | "totalRealizedGains"
+      | "totalDividends"
+      | "totalFees"
+  >(key: K): number {
+    return this.getAllHoldings().reduce(
+      (total, holding) => total + holding[key],
+      0
     );
   }
 }
