@@ -4,6 +4,9 @@
   "files": [],
   "references": [
     {
+      "path": "./libs/shared"
+    },
+    {
       "path": "./packages/portfolio"
     },
     {

@@ -1,10 +1,8 @@
-import { calculateGenericChecksum } from "../utils";
+import { FLOATING_POINT_TOLERANCE } from "@csfin-toolkit/shared";
+import { calculateGenericChecksum, isEffectivelyZero } from "../utils";
 import { BaseTransaction } from "./BaseTransaction";
 import { PortfolioHolding } from "./PortfolioHolding";
 import { SellTransactionData } from "./schema";
-
-/** Threshold for floating-point comparison */
-const TOLERANCE = 1e-6;
 
 class SellTransaction extends BaseTransaction {
   constructor(
@@ -24,14 +22,14 @@ class SellTransaction extends BaseTransaction {
   override apply(holding: PortfolioHolding): void {
     let sharesToSell = this.shares;
 
-    if (sharesToSell - holding.shares > TOLERANCE) {
+    if (sharesToSell - holding.shares > FLOATING_POINT_TOLERANCE) {
       throw new Error(
         `Cannot sell more shares than are currently in this portfolio holding (ISIN: ${holding.security.isin})`
       );
     }
 
     while (
-      sharesToSell > TOLERANCE &&
+      sharesToSell > FLOATING_POINT_TOLERANCE &&
       holding.currentBuyTransactions.length > 0
     ) {
       const tx = holding.currentBuyTransactions[0];
@@ -58,7 +56,7 @@ class SellTransaction extends BaseTransaction {
         tx.shares = 0;
       }
 
-      if (tx.shares < TOLERANCE) {
+      if (isEffectivelyZero(tx.shares)) {
         // Remove the transaction if shares are exhausted
         holding.currentBuyTransactions.shift();
       }
@@ -67,7 +65,7 @@ class SellTransaction extends BaseTransaction {
     // The SELL transaction is now fully processed, and we update some values
     holding.shares -= this.shares;
 
-    if (holding.shares < TOLERANCE) {
+    if (isEffectivelyZero(holding.shares)) {
       holding.shares = 0.0;
       // reset fees and taxes if the position is fully sold
       holding.totalFees = 0.0;
