@@ -7,13 +7,13 @@
       "path": "./libs/shared"
     },
     {
-      "path": "./packages/portfolio"
+      "path": "./libs/core"
     },
     {
-      "path": "./packages/core"
+      "path": "./libs/providers"
     },
     {
-      "path": "./packages/providers"
+      "path": "./apps/portfolio"
     }
   ]
 }

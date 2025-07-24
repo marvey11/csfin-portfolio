@@ -1,5 +1,5 @@
 {
-  "name": "@csfin-toolkit/shared",
+  "name": "@csfin-portfolio/shared",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -15,11 +15,13 @@
       "default": "./dist/index.js"
     }
   },
-  "scripts": {
-    "test": "vitest"
+  "nx": {
+    "tags": [
+      "scope:shared",
+      "type:util"
+    ]
   },
   "dependencies": {
     "tslib": "^2.3.0"
-  },
-  "devDependencies": {}
+  }
 }
