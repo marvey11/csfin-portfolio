@@ -1,7 +1,8 @@
-import { formatCurrency } from "../utils/index.js";
+import { formatCurrency, isEffectivelyZero } from "../utils/index.js";
 import { ApplicationRepository } from "./ApplicationRepository.js";
 import { PortfolioHolding } from "./PortfolioHolding.js";
 import { PortfolioOperation } from "./PortfolioOperation.js";
+import { QuoteItem } from "./QuoteItem.js";
 import { Security } from "./Security.js";
 
 /** Threshold for floating-point comparison */
@@ -79,6 +80,26 @@ class Portfolio {
     return this.getSumOverHoldings("totalRealizedGains");
   }
 
+  getCurrentValue(latestQuotes: {
+    [key: string]: QuoteItem | undefined;
+  }): number {
+    return this.getAllHoldings().reduce((total, holding) => {
+      const isin = holding.security.isin;
+      const latestQuote = latestQuotes[isin];
+
+      if (isEffectivelyZero(holding.shares)) {
+        return total;
+      }
+
+      if (!latestQuote) {
+        console.warn(`Quote not found for ISIN: ${isin}`);
+        return total;
+      }
+
+      return total + holding.shares * latestQuote.price;
+    }, 0);
+  }
+
   toString(): string {
     const activeCount = this.getActiveHoldings().length;
 
@@ -90,7 +111,7 @@ class Portfolio {
         this.totalCostBasis
       )} (incl. ${formatCurrency(this.totalFees)} fees)\n` +
       `   Total Realized Gains: ${formatCurrency(this.totalRealizedGains)}\n` +
-      `   Total Dividends: ${formatCurrency(this.totalDividends)}\n`
+      `   Total Dividends: ${formatCurrency(this.totalDividends)}`
     );
   }
 
