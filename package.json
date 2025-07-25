@@ -2,7 +2,9 @@
   "name": "@csfin-portfolio/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "clean": "./scripts/clean_repo.sh"
+  },
   "private": true,
   "dependencies": {
     "axios": "^1.6.0"
