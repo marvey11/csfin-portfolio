@@ -17,5 +17,22 @@ export default {
     "^.+\\.[tj]s$": ["@swc/jest", swcJestConfig],
   },
   moduleFileExtensions: ["ts", "js", "html"],
+
+  // --- ADD OR MODIFY THESE LINES FOR COVERAGE ---
+  collectCoverage: true,
+  coverageProvider: "v8",
+  coverageReporters: ["lcov", "text", "clover"],
   coverageDirectory: "test-output/jest/coverage",
+  // Optional: Set coverage thresholds to enforce minimum coverage percentages
+  // If thresholds are not met, the test run will fail.
+  coverageThreshold: {
+    // You can set global thresholds or per-file thresholds
+    global: {
+      branches: 80, // Minimum branch coverage
+      functions: 80, // Minimum function coverage
+      lines: 80, // Minimum line coverage
+      statements: 80, // Minimum statement coverage
+    },
+  },
+  // --- END COVERAGE CONFIG ---
 };
