@@ -63,6 +63,12 @@ class QuoteRepository {
     return quoteLen ? quoteList[quoteLen - 1] : undefined;
   }
 
+  getAllLatestQuotes(): { [key: string]: QuoteItem | undefined } {
+    return Object.fromEntries(
+      Object.keys(this.quotes).map((isin) => [isin, this.getLatestQuote(isin)])
+    );
+  }
+
   toJSON(): QuoteRepositoryData {
     const json: QuoteRepositoryData = {};
     for (const [isin, quoteItems] of Object.entries(this.quotes)) {

@@ -9,6 +9,7 @@ import {
   RawSecurityListSchema,
   RawStockSplitRecordSchema,
   resolvePath,
+  SortedList,
   StockSplit,
 } from "@csfin-portfolio/core";
 import {
@@ -22,7 +23,16 @@ import {
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { ConfigurationSchema } from "../config/index.js";
-import { calculateAnnualizedReturns } from "../utilities/index.js";
+import {
+  allEvalTypes,
+  calculateXIRR,
+  CashFlow,
+  EvalType,
+  getCashflowsForHolding,
+  getCashflowsForPortfolio,
+} from "../utilities/index.js";
+
+const line = `${"-".repeat(80)}\n`;
 
 class App {
   private config: ConfigurationSchema;
@@ -38,13 +48,18 @@ class App {
       )}\n`
     );
 
+    console.log(line);
+
     console.log("-- Loading application data...");
     const appdata = await this.loadApplicationData();
 
     console.log("-- Applying updates from raw data...");
     await this.applyUpdatesFromRawData(appdata);
 
-    console.log("-- Evaluating all Portfolio holdings...\n");
+    console.log("-- Evaluating all Portfolio holdings...");
+    console.log();
+    console.log(line);
+
     this.evaluate(appdata);
 
     console.log("-- Saving application data...");
@@ -80,32 +95,39 @@ class App {
         );
       }
 
-      const xirrGross = calculateAnnualizedReturns(
-        "gross",
-        operations,
-        latestQuote
-      );
-      const xirrNet = calculateAnnualizedReturns(
-        "net",
-        operations,
-        latestQuote
-      );
-      console.log(
-        `== XIRR: ${formatPercent(xirrGross)} (gross), ${formatPercent(
-          xirrNet
-        )} (net)`
-      );
-
-      console.log();
+      const cashflowFn = (evalType: "net" | "gross") =>
+        getCashflowsForHolding(
+          operations,
+          evalType,
+          holding.shares,
+          latestQuote
+        );
+      console.log(`== XIRR: ${getXIRREvaluation(cashflowFn)}\n`);
     }
 
-    console.log(
-      "--------------------------------------------------------------------------------\n"
-    );
+    console.log(line);
+
     console.log(portfolio.toString());
-    console.log(
-      "--------------------------------------------------------------------------------\n"
-    );
+
+    const allLatestQuotes = appdata.quotes.getAllLatestQuotes();
+    const latestValue = portfolio.getCurrentValue(allLatestQuotes);
+    const latestDate = Object.values(allLatestQuotes).reduce((date, quote) => {
+      if (!quote) {
+        return date;
+      }
+      return quote.date.getTime() > date.getTime() ? quote.date : date;
+    }, new Date(0));
+
+    const cashflowFn = (evalType: "net" | "gross") =>
+      getCashflowsForPortfolio(
+        appdata.operations,
+        evalType,
+        latestValue,
+        latestDate
+      );
+    console.log(`== XIRR: ${getXIRREvaluation(cashflowFn)}\n`);
+
+    console.log(line);
   }
 
   private async loadApplicationData(): Promise<ApplicationRepository> {
@@ -277,5 +299,10 @@ class App {
     return path.join(resolvePath(this.config.dataDirectory), fileName);
   }
 }
+
+const getXIRREvaluation = (fn: (evalType: EvalType) => SortedList<CashFlow>) =>
+  allEvalTypes
+    .map((type) => `${formatPercent(calculateXIRR(fn(type)))} (${type})`)
+    .join(", ");
 
 export { App };
