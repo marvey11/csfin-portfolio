@@ -34,6 +34,44 @@ describe("Test Suite for the PortfolioHolding class", () => {
     expect(holding.totalTaxes).toStrictEqual(0);
   });
 
+  it("should correctly apply fees and taxes", () => {
+    const tx01 = new BuyTransaction("2023-01-01", 10, 100, 5);
+    tx01.apply(holding);
+
+    expect(holding.totalFees).toBeCloseTo(5);
+    expect(holding.totalTaxes).toBeCloseTo(0);
+
+    const tx02 = new BuyTransaction("2023-02-01", 10, 120, 5);
+    tx02.apply(holding);
+
+    expect(holding.totalFees).toBeCloseTo(10);
+    expect(holding.totalTaxes).toBeCloseTo(0);
+
+    const tx03 = new SellTransaction("2024-01-01", 15, 150, 10, 15);
+    tx03.apply(holding);
+
+    expect(holding.totalFees).toBeCloseTo(20);
+    expect(holding.totalTaxes).toBeCloseTo(15);
+
+    const tx04 = new SellTransaction("2024-02-01", 5, 160, 5, 2);
+    tx04.apply(holding);
+
+    const nominalGains = -10 * 100 - 10 * 120 + 15 * 150 + 5 * 160;
+
+    const totalFees = 5 + 5 + 10 + 5;
+    const totalTaxes = 15 + 2;
+
+    // realised gains should be nominal gains minus fees and taxes
+    expect(holding.totalRealizedGains).toBeCloseTo(
+      nominalGains - totalFees - totalTaxes
+    );
+
+    // fees and taxes should now be reset since the holding is sold off and the fees and taxes have
+    // been absorbed by the gains
+    expect(holding.totalFees).toBeCloseTo(0);
+    expect(holding.totalTaxes).toBeCloseTo(0);
+  });
+
   it("should correctly apply transaction operations", () => {
     const tx01 = new BuyTransaction("2023-01-01", 10, 100, 5);
     tx01.apply(holding);
@@ -67,7 +105,9 @@ describe("Test Suite for the PortfolioHolding class", () => {
     expect(holding.nominalPurchasePrice).toStrictEqual(0);
     expect(holding.totalCostBasis).toStrictEqual(0);
     expect(holding.averagePricePerShare).toBeCloseTo(0);
-    expect(holding.totalRealizedGains).toStrictEqual(650);
+
+    // nominal gain of 650, but needs to be decresed by fees (20) and taxes (20)
+    expect(holding.totalRealizedGains).toStrictEqual(610);
 
     // fees and taxes should be reset, as the position is fully sold
     expect(holding.totalFees).toStrictEqual(0);

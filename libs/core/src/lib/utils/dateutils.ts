@@ -67,12 +67,8 @@ const isValidISODateString = (dateString: string): boolean => {
 
   // D -- check for semantically incorrect date strings, like e.g. "2025-06-31"
   const [year, month, day] = dateString.split("-").map(Number);
-  if (!isValidDateComponents(year, month, day)) {
-    return false;
-  }
 
-  // All checks passed
-  return true;
+  return isValidDateComponents(year, month, day);
 };
 
 /**
@@ -97,12 +93,8 @@ const isValidFormattedString = (formattedDate: string): boolean => {
 
   // B -- parse the components and check them
   const [day, month, year] = getCompsFromFormatted(formattedDate);
-  if (!isValidDateComponents(year, month, day)) {
-    return false;
-  }
 
-  // All checks passed
-  return true;
+  return isValidDateComponents(year, month, day);
 };
 
 const createDateFromFormatted = (formattedDate: string): Date => {
@@ -145,6 +137,7 @@ const isValidDateComponents = (
 export {
   compareNormalizedDates,
   getDateObject,
+  isValidDateComponents,
   isValidFormattedString,
   isValidISODateString,
   normalizeDate,

@@ -1,9 +1,11 @@
 import {
   getDateObject,
+  isValidDateComponents,
   isValidFormattedString,
   isValidISODateString,
   normalizeDate,
 } from "./dateutils.js";
+import { formatNormalizedDate } from "./formatters.js";
 
 describe("Test suite for dateutils", () => {
   describe("Test suite for normalizeDate", () => {
@@ -94,6 +96,41 @@ describe("Test suite for dateutils", () => {
       expect(isValidFormattedString("13.7.2025")).toStrictEqual(false);
       expect(isValidFormattedString("13/7/2025")).toStrictEqual(false);
       expect(isValidFormattedString("7/13/2025")).toStrictEqual(false);
+    });
+  });
+
+  describe("Test suite for isValidDateComponents", () => {
+    it("should pass basic tests", () => {
+      expect(isValidDateComponents(2025, 7, 13)).toStrictEqual(true);
+      expect(isValidDateComponents(2024, 2, 29)).toStrictEqual(true); // leap year
+    });
+
+    it("should correctly recognise semantically incorrect dates", () => {
+      expect(isValidDateComponents(2023, 2, 29)).toStrictEqual(false);
+      expect(isValidDateComponents(2023, 4, 31)).toStrictEqual(false);
+    });
+
+    it("should correctly recognise invalid date components", () => {
+      expect(isValidDateComponents(undefined, 7, 13)).toStrictEqual(false);
+      expect(isValidDateComponents(2025, undefined, 13)).toStrictEqual(false);
+      expect(isValidDateComponents(2025, 7, undefined)).toStrictEqual(false);
+    });
+  });
+
+  describe("Test suite for formatNormalizedDate", () => {
+    it("should pass basic tests when not providing a locale", () => {
+      expect(formatNormalizedDate(getDateObject("2025-07-13"))).toStrictEqual(
+        "2025-07-13"
+      );
+    });
+
+    it("should pass basic tests when providing a locale", () => {
+      expect(
+        formatNormalizedDate(getDateObject("2025-07-13"), "de-DE")
+      ).toStrictEqual("13.07.2025");
+      expect(
+        formatNormalizedDate(getDateObject("2025-07-13"), "en-GB")
+      ).toStrictEqual("13/07/2025");
     });
   });
 });

@@ -37,7 +37,6 @@ describe("Test Suite for the StockSplit operation class", () => {
   describe("serialise/deserialise", () => {
     it("should serialise and deserialise correctly", () => {
       const baseJSON = baseStockSplit.toJSON();
-      console.log("BASE JSON:", baseJSON);
       const object = deserializeOperation(baseJSON);
       expect(object.toJSON()).toEqual(baseJSON);
     });

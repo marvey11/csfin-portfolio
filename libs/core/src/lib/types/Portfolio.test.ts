@@ -4,11 +4,22 @@ import { OperationRepository } from "./OperationRepository.js";
 import { Portfolio } from "./Portfolio.js";
 import { QuoteRepository } from "./QuoteRepository.js";
 import { SecurityRepository } from "./SecurityRepository.js";
+import { SellTransaction } from "./SellTransaction.js";
 import { StockSplit } from "./StockSplit.js";
 
 describe("Test Suite for the Portfolio class", () => {
   const isin01 = "DE1234567890";
   const isin02 = "US0987654321";
+
+  let consoleWarnSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    consoleWarnSpy = jest.spyOn(console, "warn");
+  });
+
+  afterEach(() => {
+    consoleWarnSpy.mockRestore();
+  });
 
   it("should pass basic tests", () => {
     const portfolio = new Portfolio();
@@ -30,6 +41,10 @@ describe("Test Suite for the Portfolio class", () => {
 
       operationsRepo.add(isin02, new BuyTransaction("2024-01-01", 10, 100, 5));
       operationsRepo.add(isin02, new BuyTransaction("2024-07-01", 10, 120, 5));
+      operationsRepo.add(
+        isin02,
+        new SellTransaction("2024-08-01", 20, 125, 5, 10)
+      );
 
       securitiesRepo = new SecurityRepository();
 
@@ -66,11 +81,45 @@ describe("Test Suite for the Portfolio class", () => {
       expect(holding01).toBeDefined();
       expect(holding01?.shares).toStrictEqual(20);
       expect(holding01?.averagePricePerShare).toBeCloseTo(50.25);
+      expect(holding01?.totalRealizedGains).toBeCloseTo(0);
 
       const holding02 = portfolio.getHolding(isin02);
       expect(holding02).toBeDefined();
-      expect(holding02?.shares).toStrictEqual(20);
-      expect(holding02?.averagePricePerShare).toBeCloseTo(110.5);
+      // holding has been sold off
+      expect(holding02?.shares).toStrictEqual(0);
+      expect(holding02?.averagePricePerShare).toBeCloseTo(0);
+      expect(holding02?.totalRealizedGains).toBeCloseTo(275);
+
+      expect(portfolio.getActiveHoldings()).toHaveLength(1);
+      expect(portfolio.totalCostBasis).toBeCloseTo(1005);
+
+      // fees for the second holding should not be counted here
+      // --> they will be counted in the realised gains instead
+      expect(portfolio.totalFees).toBeCloseTo(5);
+
+      expect(portfolio.totalRealizedGains).toBeCloseTo(275);
+
+      expect(portfolio.totalDividends).toStrictEqual(0);
+    });
+
+    it("should not a holding for an unknown security", () => {
+      operationsRepo.add(
+        "FR1234567890",
+        new BuyTransaction("2024-01-01", 10, 100, 5)
+      );
+
+      const portfolio = Portfolio.reconstruct(appdata);
+
+      expect(portfolio.getAllHoldings()).toHaveLength(2);
+
+      expect(portfolio.getHolding(isin01)).toBeDefined();
+      expect(portfolio.getHolding(isin02)).toBeDefined();
+
+      expect(portfolio.getHolding("FR1234567890")).toBeUndefined();
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Security with ISIN FR1234567890 not found in the repository. Ignoring..."
+      );
     });
   });
 });
