@@ -1,3 +1,4 @@
+import { formatNormalizedDate } from "../../utils/formatters.js";
 import { CompareFunction, SortedList } from "./SortedList.js";
 
 describe("Test Suite for the SortedList class", () => {
@@ -157,6 +158,26 @@ describe("Test Suite for the SortedList class", () => {
           .map((e) => e.name)
           .join(", ")
       ).toStrictEqual("Project Deadline, Review");
+    });
+
+    it("should correctly avoid duplicate objects", () => {
+      const noDuplicates = new SortedList<Event>(compareEventsByDate, (item) =>
+        formatNormalizedDate(item.date)
+      );
+
+      expect(noDuplicates.size).toStrictEqual(0);
+
+      noDuplicates.add({ name: "Meeting", date: new Date("2023-10-26") });
+      noDuplicates.add({
+        name: "Another Meeting",
+        date: new Date("2023-10-27"),
+      });
+      noDuplicates.add({
+        name: "Meeting #3",
+        date: new Date("2023-10-26"),
+      });
+
+      expect(noDuplicates.size).toStrictEqual(2);
     });
   });
 });
