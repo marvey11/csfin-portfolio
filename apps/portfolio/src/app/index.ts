@@ -4,6 +4,7 @@ import {
   formatCurrency,
   formatNormalizedDate,
   formatPercent,
+  isEffectivelyZero,
   Portfolio,
   RawDividendRecordListSchema,
   RawSecurityListSchema,
@@ -20,6 +21,7 @@ import {
   RawQuoteDataRepository,
   RawTransactionRepository,
 } from "@csfin-portfolio/providers";
+import chalk from "chalk";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { ConfigurationSchema } from "../config/index.js";
@@ -95,14 +97,31 @@ class App {
         );
       }
 
-      const cashflowFn = (evalType: "net" | "gross") =>
+      const currentValue = holding.shares * (latestQuote?.price ?? 0);
+      const absoluteGains = currentValue - holding.totalCostBasis;
+
+      console.log(
+        `>> Current Value: ${formatCurrency(
+          currentValue
+        )} -> W/L: ${this.getColoredValueString(
+          absoluteGains,
+          formatCurrency
+        )} | ${this.getColoredValueString(
+          isEffectivelyZero(holding.totalCostBasis)
+            ? 0
+            : absoluteGains / holding.totalCostBasis,
+          formatPercent
+        )}`
+      );
+
+      const cashflowFn = (evalType: EvalType) =>
         getCashflowsForHolding(
           operations,
           evalType,
           holding.shares,
           latestQuote
         );
-      console.log(`== XIRR: ${getXIRREvaluation(cashflowFn)}\n`);
+      console.log(`== XIRR: ${this.getXIRREvaluation(cashflowFn)}\n`);
     }
 
     console.log(line);
@@ -111,6 +130,20 @@ class App {
 
     const allLatestQuotes = appdata.quotes.getAllLatestQuotes();
     const latestValue = portfolio.getCurrentValue(allLatestQuotes);
+    const absoluteGains = latestValue - portfolio.totalCostBasis;
+
+    console.log(
+      `   Total Current Value: ${formatCurrency(
+        latestValue
+      )} -> W/L: ${this.getColoredValueString(
+        absoluteGains,
+        formatCurrency
+      )} | ${this.getColoredValueString(
+        absoluteGains / portfolio.totalCostBasis,
+        formatPercent
+      )}`
+    );
+
     const latestDate = Object.values(allLatestQuotes).reduce((date, quote) => {
       if (!quote) {
         return date;
@@ -118,14 +151,14 @@ class App {
       return quote.date.getTime() > date.getTime() ? quote.date : date;
     }, new Date(0));
 
-    const cashflowFn = (evalType: "net" | "gross") =>
+    const cashflowFn = (evalType: EvalType) =>
       getCashflowsForPortfolio(
         appdata.operations,
         evalType,
         latestValue,
         latestDate
       );
-    console.log(`== XIRR: ${getXIRREvaluation(cashflowFn)}\n`);
+    console.log(`== XIRR: ${this.getXIRREvaluation(cashflowFn)}\n`);
 
     console.log(line);
   }
@@ -140,7 +173,7 @@ class App {
     appdata: ApplicationRepository
   ): Promise<void> {
     const jsonPath = this.createFilePath(this.config.jsonAppdataFileName);
-    writeFile(jsonPath, JSON.stringify(appdata.toJSON(), null, 2), {
+    await writeFile(jsonPath, JSON.stringify(appdata.toJSON(), null, 2), {
       encoding: "utf8",
     });
   }
@@ -149,10 +182,14 @@ class App {
     appdata: ApplicationRepository
   ): Promise<void> {
     await this.applySecuritiesFromRawData(appdata);
-    await this.applyTransactionsFromRawData(appdata);
-    await this.applyDividendsFromRawData(appdata);
-    await this.applyStockSplitsFromRawData(appdata);
-    await this.applyQuotesFromRawData(appdata);
+
+    // parallelising the loading of raw data not depending on each other
+    await Promise.all([
+      this.applyTransactionsFromRawData(appdata),
+      this.applyDividendsFromRawData(appdata),
+      this.applyStockSplitsFromRawData(appdata),
+      this.applyQuotesFromRawData(appdata),
+    ]);
   }
 
   private async applySecuritiesFromRawData(
@@ -191,30 +228,12 @@ class App {
   }
 
   private async loadTransactionsFromRawData(): Promise<RawTransactionRepository> {
-    const csvRawDataPath = path.join(
-      resolvePath(this.config.dataDirectory),
-      this.config.rawTransactionDataDirName
+    return this.loadFromCsvDirectory(
+      this.config.rawTransactionDataDirName,
+      () => new RawTransactionRepository(),
+      parseRawTransactionData,
+      (repo, data) => repo.addAll(data)
     );
-
-    const rawDataRepository = new RawTransactionRepository();
-
-    const files = await readdir(csvRawDataPath, { withFileTypes: true });
-
-    for (const csvFile of files) {
-      if (!(csvFile.isFile() && csvFile.name.endsWith(".csv"))) {
-        continue;
-      }
-
-      const value = await readFile(
-        path.join(csvRawDataPath, csvFile.name),
-        "utf8"
-      );
-
-      const parsedData = parseRawTransactionData(value);
-      rawDataRepository.addAll(parsedData);
-    }
-
-    return rawDataRepository;
   }
 
   private async applyDividendsFromRawData(
@@ -269,40 +288,74 @@ class App {
   }
 
   private async loadQuotesFromRawData(): Promise<RawQuoteDataRepository> {
+    return this.loadFromCsvDirectory(
+      this.config.rawQuoteDataDirName,
+      () => new RawQuoteDataRepository(),
+      parseRawQuoteData,
+      (repo, data) => repo.add(data)
+    );
+  }
+
+  private async loadFromCsvDirectory<TRepo, TParsed>(
+    dirName: string,
+    repositoryFactory: () => TRepo,
+    parser: (content: string) => TParsed,
+    adder: (repo: TRepo, data: TParsed) => void
+  ): Promise<TRepo> {
     const csvRawDataPath = path.join(
       resolvePath(this.config.dataDirectory),
-      this.config.rawQuoteDataDirName
+      dirName
     );
 
-    const updateRepository = new RawQuoteDataRepository();
+    const repository = repositoryFactory();
 
-    const files = await readdir(csvRawDataPath, { withFileTypes: true });
+    const dirents = await readdir(csvRawDataPath, { withFileTypes: true });
+    const csvFiles = dirents
+      .filter((dirent) => dirent.isFile() && dirent.name.endsWith(".csv"))
+      .map((dirent) => dirent.name);
 
-    for (const csvFile of files) {
-      if (!(csvFile.isFile() && csvFile.name.endsWith(".csv"))) {
-        continue;
-      }
+    const parsedDataPromises = csvFiles.map((fileName) =>
+      readFile(path.join(csvRawDataPath, fileName), "utf8").then(parser)
+    );
 
-      const value = await readFile(
-        path.join(csvRawDataPath, csvFile.name),
-        "utf8"
-      );
+    const allParsedData = await Promise.all(parsedDataPromises);
 
-      const parsedData = parseRawQuoteData(value);
-      updateRepository.add(parsedData);
+    for (const parsedData of allParsedData) {
+      adder(repository, parsedData);
     }
 
-    return updateRepository;
+    return repository;
   }
 
   private createFilePath(fileName: string): string {
     return path.join(resolvePath(this.config.dataDirectory), fileName);
   }
-}
 
-const getXIRREvaluation = (fn: (evalType: EvalType) => SortedList<CashFlow>) =>
-  allEvalTypes
-    .map((type) => `${formatPercent(calculateXIRR(fn(type)))} (${type})`)
-    .join(", ");
+  private getXIRREvaluation(fn: (evalType: EvalType) => SortedList<CashFlow>) {
+    return allEvalTypes
+      .map(
+        (type) =>
+          `${this.getColoredValueString(
+            calculateXIRR(fn(type)),
+            formatPercent
+          )} (${type})`
+      )
+      .join(" | ");
+  }
+
+  private getColoredValueString(
+    value: number,
+    formatter: (value: number) => string
+  ) {
+    const formatted = formatter(value);
+    if (value > 0) {
+      return chalk.green(formatted);
+    }
+    if (value < 0) {
+      return chalk.red(formatted);
+    }
+    return formatted;
+  }
+}
 
 export { App };
