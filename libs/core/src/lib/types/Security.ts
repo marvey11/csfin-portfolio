@@ -1,5 +1,3 @@
-import { Currency } from "./Currency.js";
-
 interface Security {
   /** The security's International Securities Identification Number. */
   isin: string;
@@ -15,9 +13,6 @@ interface Security {
 
   /** The stock's two-letter country code, like DE, FR, US. */
   countryCode: string;
-
-  /** The stock's currency. */
-  currency: Currency;
 }
 
 export type { Security };

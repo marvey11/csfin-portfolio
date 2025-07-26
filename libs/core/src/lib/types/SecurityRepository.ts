@@ -5,29 +5,6 @@ import {
 } from "./schema/index.js";
 import { Security } from "./Security.js";
 
-const isSecurity = (obj: unknown): obj is Security => {
-  if (typeof obj !== "object" || obj == null) {
-    return false;
-  }
-
-  const potential = obj as { [key: string]: unknown };
-
-  return (
-    "isin" in potential &&
-    typeof potential["isin"] === "string" &&
-    "nsin" in potential &&
-    typeof potential["nsin"] === "string" &&
-    "name" in potential &&
-    typeof potential["name"] === "string" &&
-    "country" in potential &&
-    typeof potential["country"] === "string" &&
-    "countryCode" in potential &&
-    typeof potential["countryCode"] === "string" &&
-    "currency" in potential &&
-    typeof potential["currency"] === "string"
-  );
-};
-
 /**
  * Manages a collection of securities, ensuring no duplicates based on ISIN or NSIN are added.
  */
@@ -61,11 +38,13 @@ class SecurityRepository {
    * @param security The security object to add.
    */
   add(security: Security): void {
-    if (!isSecurity(security)) {
+    const result = SecuritySchema.safeParse(security);
+
+    if (!result.success) {
       throw new Error("Invalid arguments for add.");
     }
 
-    const validatedData = SecuritySchema.parse(security);
+    const validatedData = result.data;
 
     const { isin, nsin } = validatedData;
     if (!this.has("isin", isin) && !this.has("nsin", nsin)) {
