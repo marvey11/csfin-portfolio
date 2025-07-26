@@ -16,7 +16,6 @@ describe("Test Suite for the PortfolioHolding class", () => {
     name: "Fictional Inc.",
     country: "Germany",
     countryCode: "DE",
-    currency: "EUR",
   };
 
   let holding: PortfolioHolding;

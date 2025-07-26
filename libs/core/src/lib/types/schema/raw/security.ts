@@ -1,5 +1,5 @@
 import z from "zod";
-import { CurrencySchema, IsinStringSchema } from "../zod-schema-types.js";
+import { IsinStringSchema } from "../zod-schema-types.js";
 
 const RawSecuritySchema = z.object({
   isin: IsinStringSchema,
@@ -7,7 +7,6 @@ const RawSecuritySchema = z.object({
   name: z.string().min(1),
   country: z.string().min(1),
   countryCode: z.string().regex(/^[A-Z]{2}$/),
-  currency: CurrencySchema,
 });
 
 const RawSecurityListSchema = z.array(RawSecuritySchema);

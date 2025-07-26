@@ -21,7 +21,6 @@ describe("Test Suite for the ApplicationRepository class", () => {
       name: "Fictional Inc.",
       country: "Germany",
       countryCode: "DE",
-      currency: "EUR",
     });
     quotes.add("DE1234567890", new QuoteItem("2023-01-01", 100));
     operations.add(

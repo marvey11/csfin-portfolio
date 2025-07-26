@@ -10,7 +10,6 @@ describe("Test Suite for the SecurityRepository class", () => {
     name: "Fictional Inc.",
     country: "Germany",
     countryCode: "DE",
-    currency: "EUR",
   };
 
   let repo: SecurityRepository;
@@ -42,7 +41,6 @@ describe("Test Suite for the SecurityRepository class", () => {
         name: "Fictional Inc.",
         country: "Germany",
         countryCode: "DE",
-        currency: "EUR",
       });
       expect(repo.getAll()).toHaveLength(1);
 
@@ -53,7 +51,6 @@ describe("Test Suite for the SecurityRepository class", () => {
         name: "Another Inc.",
         country: "Germany",
         countryCode: "DE",
-        currency: "EUR",
       });
       expect(repo.getAll()).toHaveLength(1);
 
@@ -64,7 +61,6 @@ describe("Test Suite for the SecurityRepository class", () => {
         name: "Imaginary Co.",
         country: "United States",
         countryCode: "US",
-        currency: "USD",
       });
       expect(repo.getAll()).toHaveLength(1);
     });
@@ -92,7 +88,6 @@ describe("Test Suite for the SecurityRepository class", () => {
         name: "Imaginary Co.",
         country: "United States",
         countryCode: "US",
-        currency: "USD",
       };
 
       repo.add(security);

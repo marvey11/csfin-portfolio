@@ -54,7 +54,6 @@ describe("Test Suite for the Portfolio class", () => {
         name: "Fictional Inc.",
         country: "Germany",
         countryCode: "DE",
-        currency: "EUR",
       });
       securitiesRepo.add({
         isin: isin02,
@@ -62,7 +61,6 @@ describe("Test Suite for the Portfolio class", () => {
         name: "Fictional Corp.",
         country: "United States",
         countryCode: "US",
-        currency: "USD",
       });
 
       quotesRepo = new QuoteRepository();

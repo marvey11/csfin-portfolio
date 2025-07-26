@@ -1,4 +1,4 @@
-import { parseRawTransactionData } from "./transaction";
+import { parseRawTransactionData } from "./transaction.js";
 
 describe("Test Suite for the parseRawTransactionData function", () => {
   const validCsvContent =
