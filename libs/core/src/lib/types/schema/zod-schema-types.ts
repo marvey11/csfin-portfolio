@@ -23,8 +23,12 @@ const CurrencySchema = z
   .optional()
   .default("EUR");
 
+const COUNTRY_CODE_REGEX = /^[A-Z]{2}$/;
+const CountryCodeSchema = z.string().regex(COUNTRY_CODE_REGEX);
+
 export {
   ChecksumStringSchema,
+  CountryCodeSchema,
   CurrencySchema,
   DateStringSchema,
   IsinStringSchema,

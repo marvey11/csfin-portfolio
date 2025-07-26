@@ -10,8 +10,4 @@ interface CashFlow {
   cashAmount: number;
 }
 
-const allEvalTypes = ["net", "gross"] as const;
-type EvalType = (typeof allEvalTypes)[number];
-
-export { allEvalTypes };
-export type { CashFlow, EvalType };
+export type { CashFlow };

@@ -15,13 +15,14 @@ const deserializeOperation = (data: unknown): PortfolioOperation => {
 
   switch (validatedData.operationType) {
     case "DIVIDEND": {
-      const { dividendPerShare, applicableShares, exchangeRate } =
+      const { dividendPerShare, applicableShares, exchangeRate, taxes } =
         validatedData;
       return new Dividend(
         date,
         dividendPerShare,
         applicableShares,
-        exchangeRate
+        exchangeRate,
+        taxes
       );
     }
 

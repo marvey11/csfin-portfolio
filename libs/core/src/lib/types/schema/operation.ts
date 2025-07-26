@@ -32,6 +32,7 @@ const DividendSchema = BaseOperationSchema.extend({
   dividendPerShare: z.number().positive(),
   applicableShares: z.number().positive(),
   exchangeRate: z.number().positive().optional().default(1),
+  taxes: z.number().nonnegative().optional().default(0),
 });
 
 const OperationDataSchema = z.discriminatedUnion("operationType", [

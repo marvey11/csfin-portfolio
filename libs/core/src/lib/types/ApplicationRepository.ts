@@ -5,6 +5,7 @@ import {
   ApplicationRepositorySchema,
 } from "./schema/index.js";
 import { SecurityRepository } from "./SecurityRepository.js";
+import { TaxRepository } from "./TaxRepository.js";
 
 class ApplicationRepository {
   static fromJSON(data: unknown): ApplicationRepository {
@@ -15,22 +16,34 @@ class ApplicationRepository {
     return new ApplicationRepository(
       SecurityRepository.fromJSON(validatedData.securities),
       QuoteRepository.fromJSON(validatedData.quotes),
-      operations
+      operations,
+      TaxRepository.fromJSON(validatedData.taxdata)
     );
   }
 
   securities: SecurityRepository;
   quotes: QuoteRepository;
   operations: OperationRepository;
+  taxData: TaxRepository;
 
   constructor(
     securities: SecurityRepository,
     quotes: QuoteRepository,
-    operations: OperationRepository
+    operations: OperationRepository,
+    taxData: TaxRepository
   ) {
     this.securities = securities;
     this.quotes = quotes;
     this.operations = operations;
+    this.taxData = taxData;
+  }
+
+  getTaxRateForISIN(isin: string): number | undefined {
+    const security = this.securities.getBy("isin", isin);
+
+    return security
+      ? this.taxData.getWithholdingTaxRate(security.countryCode)
+      : undefined;
   }
 
   toJSON(): ApplicationRepositoryData {
@@ -38,6 +51,7 @@ class ApplicationRepository {
       securities: this.securities.toJSON(),
       quotes: this.quotes.toJSON(),
       operations: this.operations.toJSON(),
+      taxdata: this.taxData.toJSON(),
     };
   }
 }

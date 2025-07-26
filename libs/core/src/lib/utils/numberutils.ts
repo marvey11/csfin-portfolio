@@ -98,4 +98,6 @@ function detectNumberLocale(numberString: string): "en-GB" | "de-DE" {
   }
 }
 
-export { parseLocaleNumber, parseNumberWithAutoLocale };
+const roundCurrency = (value: number): number => Math.round(value * 100) / 100;
+
+export { parseLocaleNumber, parseNumberWithAutoLocale, roundCurrency };
