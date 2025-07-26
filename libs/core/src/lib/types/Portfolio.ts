@@ -1,4 +1,4 @@
-import { formatCurrency, isEffectivelyZero } from "../utils/index.js";
+import { isEffectivelyZero } from "../utils/index.js";
 import { ApplicationRepository } from "./ApplicationRepository.js";
 import { PortfolioHolding } from "./PortfolioHolding.js";
 import { PortfolioOperation } from "./PortfolioOperation.js";
@@ -98,21 +98,6 @@ class Portfolio {
 
       return total + holding.shares * latestQuote.price;
     }, 0);
-  }
-
-  toString(): string {
-    const activeCount = this.getActiveHoldings().length;
-
-    return (
-      `-> Number of Active Holdings: ${activeCount} (plus ${
-        this.holdings.size - activeCount
-      } inactive)\n` +
-      `   Total Cost Basis: ${formatCurrency(
-        this.totalCostBasis
-      )} (incl. ${formatCurrency(this.totalFees)} fees)\n` +
-      `   Total Realized Gains: ${formatCurrency(this.totalRealizedGains)}\n` +
-      `   Total Dividends: ${formatCurrency(this.totalDividends)}`
-    );
   }
 
   private getSumOverHoldings<
