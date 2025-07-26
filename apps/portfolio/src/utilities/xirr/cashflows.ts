@@ -1,13 +1,14 @@
 import {
   BuyTransaction,
   Dividend,
+  EvalType,
   OperationRepository,
   PortfolioOperation,
   QuoteItem,
   SellTransaction,
   SortedList,
 } from "@csfin-portfolio/core";
-import { CashFlow, EvalType } from "./types.js";
+import { CashFlow } from "./types.js";
 
 const getCashflowsForPortfolio = (
   operationsRepository: OperationRepository,
@@ -90,10 +91,11 @@ const convertOperations = (
       }
 
       case "DIVIDEND": {
-        const { dividendPerShare, applicableShares, exchangeRate } =
+        const { dividendPerShare, applicableShares, exchangeRate, taxes } =
           operation as Dividend;
         cashAmount =
-          (dividendPerShare * applicableShares) / (exchangeRate ?? 1);
+          (dividendPerShare * applicableShares) / (exchangeRate ?? 1) -
+          (evalType === "net" ? taxes : 0.0);
         break;
       }
 

@@ -48,7 +48,7 @@ class SellTransaction extends BaseTransaction {
 
         // updates with fees and taxes with the sell transaction's data
         holding.totalFees += this.fees;
-        holding.totalTaxes += this.taxes;
+        holding.salesTaxes += this.taxes;
       } else {
         // If the current transaction does not have enough shares, sell all it has
         sharesToSell -= tx.shares;
@@ -75,10 +75,10 @@ class SellTransaction extends BaseTransaction {
     if (isEffectivelyZero(holding.shares)) {
       holding.shares = 0.0;
       // move fees and taxes to realised gains if the position is fully sold
-      holding.totalRealizedGains -= holding.totalFees + holding.totalTaxes;
+      holding.totalRealizedGains -= holding.totalFees + holding.salesTaxes;
       // then reset the holding's fees and taxes
       holding.totalFees = 0.0;
-      holding.totalTaxes = 0.0;
+      holding.salesTaxes = 0.0;
     }
   }
 

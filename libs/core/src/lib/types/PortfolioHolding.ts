@@ -31,7 +31,9 @@ export class PortfolioHolding {
 
   totalFees: number;
 
-  totalTaxes: number;
+  salesTaxes: number;
+
+  dividendTaxes: number;
 
   totalDividends: number;
 
@@ -45,7 +47,9 @@ export class PortfolioHolding {
     this.shares = 0.0;
 
     this.totalFees = 0.0;
-    this.totalTaxes = 0.0;
+
+    this.salesTaxes = 0.0;
+    this.dividendTaxes = 0.0;
 
     this.totalDividends = 0.0;
 

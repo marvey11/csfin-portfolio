@@ -5,3 +5,5 @@ export * from "./quote-repository.js";
 export * from "./quote.js";
 export * from "./security-repository.js";
 export * from "./security.js";
+export * from "./tax-repository.js";
+export * from "./tax.js";

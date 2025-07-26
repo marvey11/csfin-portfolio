@@ -30,7 +30,8 @@ describe("Test Suite for the PortfolioHolding class", () => {
     expect(holding.shares).toStrictEqual(0);
     expect(holding.totalRealizedGains).toStrictEqual(0);
     expect(holding.totalFees).toStrictEqual(0);
-    expect(holding.totalTaxes).toStrictEqual(0);
+    expect(holding.salesTaxes).toBeCloseTo(0);
+    expect(holding.dividendTaxes).toBeCloseTo(0);
   });
 
   it("should correctly apply fees and taxes", () => {
@@ -38,19 +39,22 @@ describe("Test Suite for the PortfolioHolding class", () => {
     tx01.apply(holding);
 
     expect(holding.totalFees).toBeCloseTo(5);
-    expect(holding.totalTaxes).toBeCloseTo(0);
+    expect(holding.salesTaxes).toBeCloseTo(0);
+    expect(holding.dividendTaxes).toBeCloseTo(0);
 
     const tx02 = new BuyTransaction("2023-02-01", 10, 120, 5);
     tx02.apply(holding);
 
     expect(holding.totalFees).toBeCloseTo(10);
-    expect(holding.totalTaxes).toBeCloseTo(0);
+    expect(holding.salesTaxes).toBeCloseTo(0);
+    expect(holding.dividendTaxes).toBeCloseTo(0);
 
     const tx03 = new SellTransaction("2024-01-01", 15, 150, 10, 15);
     tx03.apply(holding);
 
     expect(holding.totalFees).toBeCloseTo(20);
-    expect(holding.totalTaxes).toBeCloseTo(15);
+    expect(holding.salesTaxes).toBeCloseTo(15);
+    expect(holding.dividendTaxes).toBeCloseTo(0);
 
     const tx04 = new SellTransaction("2024-02-01", 5, 160, 5, 2);
     tx04.apply(holding);
@@ -68,7 +72,8 @@ describe("Test Suite for the PortfolioHolding class", () => {
     // fees and taxes should now be reset since the holding is sold off and the fees and taxes have
     // been absorbed by the gains
     expect(holding.totalFees).toBeCloseTo(0);
-    expect(holding.totalTaxes).toBeCloseTo(0);
+    expect(holding.salesTaxes).toBeCloseTo(0);
+    expect(holding.dividendTaxes).toBeCloseTo(0);
   });
 
   it("should correctly apply transaction operations", () => {
@@ -82,7 +87,8 @@ describe("Test Suite for the PortfolioHolding class", () => {
     expect(holding.averagePricePerShare).toBeCloseTo(100.5);
     expect(holding.totalRealizedGains).toStrictEqual(0);
     expect(holding.totalFees).toStrictEqual(5);
-    expect(holding.totalTaxes).toStrictEqual(0);
+    expect(holding.salesTaxes).toBeCloseTo(0);
+    expect(holding.dividendTaxes).toBeCloseTo(0);
 
     const tx02 = new BuyTransaction("2023-02-01", 5, 120, 5);
     tx02.apply(holding);
@@ -94,7 +100,8 @@ describe("Test Suite for the PortfolioHolding class", () => {
     expect(holding.averagePricePerShare).toBeCloseTo(107.3333333333333);
     expect(holding.totalRealizedGains).toStrictEqual(0);
     expect(holding.totalFees).toStrictEqual(10);
-    expect(holding.totalTaxes).toStrictEqual(0);
+    expect(holding.salesTaxes).toBeCloseTo(0);
+    expect(holding.dividendTaxes).toBeCloseTo(0);
 
     const tx03 = new SellTransaction("2024-01-01", 15, 150, 10, 20);
     tx03.apply(holding);
@@ -110,7 +117,8 @@ describe("Test Suite for the PortfolioHolding class", () => {
 
     // fees and taxes should be reset, as the position is fully sold
     expect(holding.totalFees).toStrictEqual(0);
-    expect(holding.totalTaxes).toStrictEqual(0);
+    expect(holding.salesTaxes).toBeCloseTo(0);
+    expect(holding.dividendTaxes).toBeCloseTo(0);
   });
 
   it("should correctly throw an exception when selling more shares than held", () => {

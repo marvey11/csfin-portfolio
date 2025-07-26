@@ -9,6 +9,7 @@ const envVarsSchema = z.object({
   JSON_STOCK_METADATA_FILE_NAME: z.string().optional(),
   JSON_DIVIDEND_DATA_FILE_NAME: z.string().optional(),
   JSON_STOCK_SPLITS_FILE_NAME: z.string().optional(),
+  JSON_TAX_DATA_FILE_NAME: z.string().optional(),
   RAW_TRANSACTION_DATA_DIR_NAME: z.string().optional(),
   RAW_QUOTE_DATA_DIR_NAME: z.string().optional(),
 });
@@ -19,6 +20,7 @@ interface ConfigurationSchema {
   jsonStockMetadataFileName: string;
   jsonDividendDataFileName: string;
   jsonStockSplitsFileName: string;
+  jsonTaxDataFileName: string;
   rawTransactionDataDirName: string;
   rawQuoteDataDirName: string;
 }
@@ -51,6 +53,7 @@ class Config {
         envVars.JSON_DIVIDEND_DATA_FILE_NAME ?? "dividend-data.json",
       jsonStockSplitsFileName:
         envVars.JSON_STOCK_SPLITS_FILE_NAME ?? "stock-split-data.json",
+      jsonTaxDataFileName: envVars.JSON_TAX_DATA_FILE_NAME ?? "tax-data.json",
       rawTransactionDataDirName:
         envVars.RAW_TRANSACTION_DATA_DIR_NAME ?? "transactions",
       rawQuoteDataDirName: envVars.RAW_QUOTE_DATA_DIR_NAME ?? "quotes",

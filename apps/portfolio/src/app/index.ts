@@ -1,6 +1,8 @@
 import {
+  allEvalTypes,
   ApplicationRepository,
   Dividend,
+  EvalType,
   formatCurrency,
   formatNormalizedDate,
   formatPercent,
@@ -11,6 +13,7 @@ import {
   RawDividendRecordListSchema,
   RawSecurityListSchema,
   RawStockSplitRecordSchema,
+  RawTaxRecordSchema,
   resolvePath,
   SortedList,
   StockSplit,
@@ -28,10 +31,9 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { ConfigurationSchema } from "../config/index.js";
 import {
-  allEvalTypes,
+  calculateEffectiveDividendTax,
   calculateXIRR,
   CashFlow,
-  EvalType,
   getCashflowsForHolding,
   getCashflowsForPortfolio,
 } from "../utilities/index.js";
@@ -79,7 +81,15 @@ class App {
     holdings.sort((a, b) => a.security.name.localeCompare(b.security.name));
 
     for (const holding of holdings) {
-      this.printHoldingEvaluation(appdata, holding);
+      const operations = appdata.operations.get(holding.security.isin);
+
+      if (operations) {
+        this.printHoldingEvaluation(appdata, holding, operations);
+      } else {
+        console.warn(
+          `⚠️ Warning: No operations stored for ISIN ${holding.security.isin}. Ignoring...`
+        );
+      }
     }
 
     this.printPortfolioEvaluation(appdata, portfolio);
@@ -87,7 +97,8 @@ class App {
 
   private printHoldingEvaluation(
     appdata: ApplicationRepository,
-    holding: PortfolioHolding
+    holding: PortfolioHolding,
+    operations: SortedList<PortfolioOperation>
   ): void {
     const {
       averagePricePerShare,
@@ -97,36 +108,32 @@ class App {
       totalDividends,
       totalFees,
       totalRealizedGains,
+      dividendTaxes,
     } = holding;
 
-    const isin = security.isin;
-
-    const operations = appdata.operations.get(isin);
-
-    if (!operations) {
-      console.warn(
-        `⚠️ Warning: No operations stored for ISIN ${isin}. Ignoring...`
-      );
-    }
-
     console.log(
-      `-- ${chalk.bold.blueBright(security.name)} (${isin} | ${security.nsin})`
+      `-- ${chalk.bold.blueBright(security.name)} (${security.isin} | ${
+        security.nsin
+      })`
     );
     console.log(`   Shares: ${shares.toFixed(3)}`);
     console.log(
-      `   Total Cost: ${formatCurrency(totalCostBasis)} (incl. ${formatCurrency(
-        totalFees
-      )} fees)`
+      `   Total Cost: ${formatCurrency(totalCostBasis)} ` +
+        `(incl. ${formatCurrency(totalFees)} Fees)`
     );
     console.log(
       `   Average Price per Share: ${formatCurrency(averagePricePerShare)}`
     );
-    console.log(`   Dividends: ${formatCurrency(totalDividends)}`);
+    console.log(
+      `   Dividends: ${formatCurrency(
+        totalDividends - dividendTaxes
+      )} (net) | Taxes: ${formatCurrency(dividendTaxes)}`
+    );
     console.log(
       `   Total Realised Gains: ${formatCurrency(totalRealizedGains)}`
     );
 
-    const latestQuote = appdata.quotes.getLatestQuote(isin);
+    const latestQuote = appdata.quotes.getLatestQuote(security.isin);
     if (latestQuote) {
       console.log(
         `   Latest Quote: ${formatCurrency(
@@ -151,12 +158,7 @@ class App {
     );
 
     const cashflowFn = (evalType: EvalType) =>
-      getCashflowsForHolding(
-        operations as SortedList<PortfolioOperation>,
-        evalType,
-        shares,
-        latestQuote
-      );
+      getCashflowsForHolding(operations, evalType, shares, latestQuote);
     console.log(`== XIRR: ${this.getXIRREvalString(cashflowFn)}\n`);
 
     console.log(line);
@@ -170,27 +172,39 @@ class App {
     const allLatestQuotes = appdata.quotes.getAllLatestQuotes();
     const currentValue = portfolio.getCurrentValue(allLatestQuotes);
 
+    const {
+      totalCostBasis,
+      totalRealizedGains,
+      totalDividends,
+      totalDividendTaxes,
+      totalFees,
+    } = portfolio;
+
     console.log(
       `-> ${activeHoldings} Active Holdings (plus ${
         portfolio.getAllHoldings().length - activeHoldings
       } inactive)`
     );
     console.log(
-      `   Total Cost: ${formatCurrency(
-        portfolio.totalCostBasis
-      )} (incl. ${formatCurrency(portfolio.totalFees)} fees)`
+      `   Total Cost: ${formatCurrency(totalCostBasis)} (incl. ${formatCurrency(
+        totalFees
+      )} Fees)`
     );
     console.log(
-      `   Total Realized Gains: ${formatCurrency(portfolio.totalRealizedGains)}`
+      `   Total Realized Gains: ${formatCurrency(totalRealizedGains)}`
     );
     console.log(
-      `   Total Dividends: ${formatCurrency(portfolio.totalDividends)}`
+      `   Total Dividends: ${formatCurrency(
+        totalDividends - totalDividendTaxes
+      )} (net) | ` +
+        `${formatCurrency(totalDividendTaxes)} Taxes, ` +
+        `Effective Rate: ${formatPercent(totalDividendTaxes / totalDividends)}`
     );
 
-    const absoluteGains = currentValue - portfolio.totalCostBasis;
-    const relativeGains = isEffectivelyZero(portfolio.totalCostBasis)
+    const absoluteGains = currentValue - totalCostBasis;
+    const relativeGains = isEffectivelyZero(totalCostBasis)
       ? 0
-      : absoluteGains / portfolio.totalCostBasis;
+      : absoluteGains / totalCostBasis;
 
     console.log(
       `>> Total Value: ${formatCurrency(
@@ -237,7 +251,10 @@ class App {
   private async applyUpdatesFromRawData(
     appdata: ApplicationRepository
   ): Promise<void> {
-    await this.applySecuritiesFromRawData(appdata);
+    await Promise.all([
+      this.applySecuritiesFromRawData(appdata),
+      this.applyTaxRatesFromRawData(appdata),
+    ]);
 
     // parallelising the loading of raw data not depending on each other
     await Promise.all([
@@ -302,9 +319,18 @@ class App {
     for (const rawDividendRecord of validatedData) {
       const { isin, dividends } = rawDividendRecord;
       dividends.forEach(({ date, dividendPerShare, shares, exchangeRate }) => {
+        const taxRate = appdata.getTaxRateForISIN(isin);
+
+        const taxes = calculateEffectiveDividendTax(
+          taxRate,
+          dividendPerShare,
+          shares,
+          exchangeRate
+        );
+
         appdata.operations.add(
           isin,
-          new Dividend(date, dividendPerShare, shares, exchangeRate)
+          new Dividend(date, dividendPerShare, shares, exchangeRate, taxes)
         );
       });
     }
@@ -350,6 +376,19 @@ class App {
       parseRawQuoteData,
       (repo, data) => repo.add(data)
     );
+  }
+
+  private async applyTaxRatesFromRawData(
+    appdata: ApplicationRepository
+  ): Promise<void> {
+    const jsonPath = this.createFilePath(this.config.jsonTaxDataFileName);
+    const rawTaxData = await readFile(jsonPath, "utf8").then(JSON.parse);
+
+    const validatedData = RawTaxRecordSchema.parse(rawTaxData);
+    const taxRates = validatedData["withholding-tax"];
+    Object.entries(taxRates).forEach(([countryCode, rate]) => {
+      appdata.taxData.addWithholdingTaxRate(countryCode, rate);
+    });
   }
 
   private async loadFromCsvDirectory<TRepo, TParsed>(

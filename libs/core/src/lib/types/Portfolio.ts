@@ -80,6 +80,10 @@ class Portfolio {
     return this.getSumOverHoldings("totalRealizedGains");
   }
 
+  get totalDividendTaxes(): number {
+    return this.getSumOverHoldings("dividendTaxes");
+  }
+
   getCurrentValue(latestQuotes: {
     [key: string]: QuoteItem | undefined;
   }): number {
@@ -106,6 +110,7 @@ class Portfolio {
       | "totalRealizedGains"
       | "totalDividends"
       | "totalFees"
+      | "dividendTaxes"
   >(key: K): number {
     return this.getAllHoldings().reduce(
       (total, holding) => total + holding[key],
