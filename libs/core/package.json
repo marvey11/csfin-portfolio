@@ -16,7 +16,6 @@
     }
   },
   "dependencies": {
-    "@csfin-portfolio/shared": "*",
     "crc": "^4.3.2",
     "tslib": "^2.3.0",
     "zod": "^4.0.8"

@@ -1,4 +1,4 @@
-import { FLOATING_POINT_TOLERANCE } from "@csfin-portfolio/shared";
+import { FLOATING_POINT_TOLERANCE } from "../constants.js";
 
 const areEffectivelyEqual = (a: number, b: number): boolean => {
   return isEffectivelyZero(a - b);

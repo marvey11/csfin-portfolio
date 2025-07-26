@@ -1,4 +1,4 @@
-import { FLOATING_POINT_TOLERANCE } from "@csfin-portfolio/shared";
+import { FLOATING_POINT_TOLERANCE } from "../constants.js";
 import { calculateGenericChecksum, isEffectivelyZero } from "../utils/index.js";
 import { BaseTransaction } from "./BaseTransaction.js";
 import { BuyTransaction } from "./BuyTransaction.js";
