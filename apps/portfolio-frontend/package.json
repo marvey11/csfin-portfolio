@@ -1,0 +1,11 @@
+{
+  "name": "@csfin-portfolio/portfolio-frontend",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "tags": [
+      "scope:frontend",
+      "type:app"
+    ]
+  }
+}
