@@ -6,6 +6,8 @@ import {
   formatPercent,
   isEffectivelyZero,
   Portfolio,
+  PortfolioHolding,
+  PortfolioOperation,
   RawDividendRecordListSchema,
   RawSecurityListSchema,
   RawStockSplitRecordSchema,
@@ -77,73 +79,127 @@ class App {
     holdings.sort((a, b) => a.security.name.localeCompare(b.security.name));
 
     for (const holding of holdings) {
-      console.log(holding.toString());
-
-      const isin = holding.security.isin;
-
-      const operations = appdata.operations.get(isin);
-
-      if (!operations) {
-        console.warn(`No operations stored for ISIN ${isin}. Ignoring...`);
-        continue;
-      }
-
-      const latestQuote = appdata.quotes.getLatestQuote(isin);
-      if (latestQuote) {
-        console.log(
-          `-- Latest Quote: ${formatCurrency(
-            latestQuote.price
-          )} @ ${formatNormalizedDate(latestQuote.date)}`
-        );
-      }
-
-      const currentValue = holding.shares * (latestQuote?.price ?? 0);
-      const absoluteGains = currentValue - holding.totalCostBasis;
-
-      console.log(
-        `>> Current Value: ${formatCurrency(
-          currentValue
-        )} -> W/L: ${this.getColoredValueString(
-          absoluteGains,
-          formatCurrency
-        )} | ${this.getColoredValueString(
-          isEffectivelyZero(holding.totalCostBasis)
-            ? 0
-            : absoluteGains / holding.totalCostBasis,
-          formatPercent
-        )}`
-      );
-
-      const cashflowFn = (evalType: EvalType) =>
-        getCashflowsForHolding(
-          operations,
-          evalType,
-          holding.shares,
-          latestQuote
-        );
-      console.log(`== XIRR: ${this.getXIRREvaluation(cashflowFn)}\n`);
+      this.printHoldingEvaluation(appdata, holding);
     }
 
-    console.log(line);
+    this.printPortfolioEvaluation(appdata, portfolio);
+  }
 
-    console.log(portfolio.toString());
+  private printHoldingEvaluation(
+    appdata: ApplicationRepository,
+    holding: PortfolioHolding
+  ): void {
+    const {
+      averagePricePerShare,
+      security,
+      shares,
+      totalCostBasis,
+      totalDividends,
+      totalFees,
+      totalRealizedGains,
+    } = holding;
 
-    const allLatestQuotes = appdata.quotes.getAllLatestQuotes();
-    const latestValue = portfolio.getCurrentValue(allLatestQuotes);
-    const absoluteGains = latestValue - portfolio.totalCostBasis;
+    const isin = security.isin;
+
+    const operations = appdata.operations.get(isin);
+
+    if (!operations) {
+      console.warn(
+        `⚠️ Warning: No operations stored for ISIN ${isin}. Ignoring...`
+      );
+    }
 
     console.log(
-      `   Total Current Value: ${formatCurrency(
-        latestValue
+      `-- ${chalk.bold.blueBright(security.name)} (${isin} | ${security.nsin})`
+    );
+    console.log(`   Shares: ${shares.toFixed(3)}`);
+    console.log(
+      `   Total Cost: ${formatCurrency(totalCostBasis)} (incl. ${formatCurrency(
+        totalFees
+      )} fees)`
+    );
+    console.log(
+      `   Average Price per Share: ${formatCurrency(averagePricePerShare)}`
+    );
+    console.log(`   Dividends: ${formatCurrency(totalDividends)}`);
+    console.log(
+      `   Total Realised Gains: ${formatCurrency(totalRealizedGains)}`
+    );
+
+    const latestQuote = appdata.quotes.getLatestQuote(isin);
+    if (latestQuote) {
+      console.log(
+        `   Latest Quote: ${formatCurrency(
+          latestQuote.price
+        )} @ ${formatNormalizedDate(latestQuote.date)}`
+      );
+    }
+
+    const currentValue = shares * (latestQuote?.price ?? 0);
+    const absoluteGains = currentValue - totalCostBasis;
+    const relativeGains = isEffectivelyZero(totalCostBasis)
+      ? 0
+      : absoluteGains / totalCostBasis;
+
+    console.log(
+      `>> Current Value: ${formatCurrency(
+        currentValue
       )} -> W/L: ${this.getColoredValueString(
         absoluteGains,
         formatCurrency
-      )} | ${this.getColoredValueString(
-        absoluteGains / portfolio.totalCostBasis,
-        formatPercent
-      )}`
+      )} | ${this.getColoredValueString(relativeGains, formatPercent)}`
     );
 
+    const cashflowFn = (evalType: EvalType) =>
+      getCashflowsForHolding(
+        operations as SortedList<PortfolioOperation>,
+        evalType,
+        shares,
+        latestQuote
+      );
+    console.log(`== XIRR: ${this.getXIRREvalString(cashflowFn)}\n`);
+
+    console.log(line);
+  }
+
+  private printPortfolioEvaluation(
+    appdata: ApplicationRepository,
+    portfolio: Portfolio
+  ): void {
+    const activeHoldings = portfolio.getActiveHoldings().length;
+    const allLatestQuotes = appdata.quotes.getAllLatestQuotes();
+    const currentValue = portfolio.getCurrentValue(allLatestQuotes);
+
+    console.log(
+      `-> ${activeHoldings} Active Holdings (plus ${
+        portfolio.getAllHoldings().length - activeHoldings
+      } inactive)`
+    );
+    console.log(
+      `   Total Cost: ${formatCurrency(
+        portfolio.totalCostBasis
+      )} (incl. ${formatCurrency(portfolio.totalFees)} fees)`
+    );
+    console.log(
+      `   Total Realized Gains: ${formatCurrency(portfolio.totalRealizedGains)}`
+    );
+    console.log(
+      `   Total Dividends: ${formatCurrency(portfolio.totalDividends)}`
+    );
+
+    const absoluteGains = currentValue - portfolio.totalCostBasis;
+    const relativeGains = isEffectivelyZero(portfolio.totalCostBasis)
+      ? 0
+      : absoluteGains / portfolio.totalCostBasis;
+
+    console.log(
+      `>> Total Value: ${formatCurrency(
+        currentValue
+      )} -> W/L: ${this.getColoredValueString(
+        absoluteGains,
+        formatCurrency
+      )} | ${this.getColoredValueString(relativeGains, formatPercent)}`
+    );
     const latestDate = Object.values(allLatestQuotes).reduce((date, quote) => {
       if (!quote) {
         return date;
@@ -155,10 +211,10 @@ class App {
       getCashflowsForPortfolio(
         appdata.operations,
         evalType,
-        latestValue,
+        currentValue,
         latestDate
       );
-    console.log(`== XIRR: ${this.getXIRREvaluation(cashflowFn)}\n`);
+    console.log(`== XIRR: ${this.getXIRREvalString(cashflowFn)}\n`);
 
     console.log(line);
   }
@@ -331,7 +387,7 @@ class App {
     return path.join(resolvePath(this.config.dataDirectory), fileName);
   }
 
-  private getXIRREvaluation(fn: (evalType: EvalType) => SortedList<CashFlow>) {
+  private getXIRREvalString(fn: (evalType: EvalType) => SortedList<CashFlow>) {
     return allEvalTypes
       .map(
         (type) =>

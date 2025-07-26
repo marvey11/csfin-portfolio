@@ -1,4 +1,3 @@
-import { formatCurrency, isEffectivelyZero } from "../utils/index.js";
 import { BuyTransaction } from "./BuyTransaction.js";
 import { PortfolioOperation } from "./PortfolioOperation.js";
 import { Security } from "./Security.js";
@@ -76,25 +75,5 @@ export class PortfolioHolding {
 
   get averagePricePerShare(): number {
     return this.shares === 0 ? 0 : this.totalCostBasis / this.shares;
-  }
-
-  toString(): string {
-    return (
-      `-> ${this.security.name} -- ISIN: ${this.security.isin} | NSIN: ${this.security.nsin}\n` +
-      `   Total Number of Shares: ${this.shares.toFixed(3)}\n` +
-      `   Total Cost Basis: ${formatCurrency(
-        this.totalCostBasis
-      )} (incl. ${formatCurrency(this.totalFees)} fees)\n` +
-      `   Average Price Per Share: ${formatCurrency(
-        this.averagePricePerShare
-      )} ` +
-      `(nominal: ${formatCurrency(
-        isEffectivelyZero(this.shares)
-          ? 0
-          : this.nominalPurchasePrice / this.shares
-      )})\n` +
-      `   Total Dividends: ${formatCurrency(this.totalDividends)}\n` +
-      `   Total Realized Gains: ${formatCurrency(this.totalRealizedGains)}`
-    );
   }
 }
