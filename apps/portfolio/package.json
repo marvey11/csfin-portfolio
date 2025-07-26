@@ -70,5 +70,8 @@
       "scope:app",
       "type:cli"
     ]
+  },
+  "dependencies": {
+    "chalk": "^5.4.1"
   }
 }
