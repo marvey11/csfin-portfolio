@@ -4,9 +4,6 @@
   "files": [],
   "references": [
     {
-      "path": "./libs/shared"
-    },
-    {
       "path": "./libs/core"
     },
     {
