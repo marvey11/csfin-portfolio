@@ -11,18 +11,6 @@
     },
     {
       "path": "./apps/portfolio"
-    },
-    {
-      "path": "./apps/portfolio-frontend"
-    },
-    {
-      "path": "./libs/shared/data-models"
-    },
-    {
-      "path": "./libs/shared/ui"
-    },
-    {
-      "path": "./apps/portfolio-api"
     }
   ]
 }

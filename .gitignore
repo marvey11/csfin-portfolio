@@ -50,6 +50,3 @@ test-output
 
 # config variables
 .env
-
-vite.config.*.timestamp*
-vitest.config.*.timestamp*
