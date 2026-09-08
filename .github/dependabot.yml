@@ -10,11 +10,16 @@ updates:
           - "nx"
           - "@nx/*"
 
+      typescript-eslint-packages:
+        patterns:
+          - "@typescript-eslint/*"
+
       dev-dependencies:
         dependency-type: "development"
         exclude-patterns:
           - "nx"
           - "@nx/*"
+          - "@typescript-eslint/*"
         update-types:
           - "minor"
           - "patch"
@@ -24,6 +29,7 @@ updates:
         exclude-patterns:
           - "nx"
           - "@nx/*"
+          - "@typescript-eslint/*"
         update-types:
           - "minor"
           - "patch"

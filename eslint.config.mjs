@@ -1,12 +1,18 @@
 import nx from "@nx/eslint-plugin";
+import eslintConfigPrettier from "eslint-config-prettier";
 
 export default [
-  ...nx.configs["flat/base"],
-  ...nx.configs["flat/typescript"],
-  ...nx.configs["flat/javascript"],
+  // Global ignores
   {
     ignores: ["**/dist", "jest.config.ts"],
   },
+
+  // Nx flat configs
+  ...nx.configs["flat/base"],
+  ...nx.configs["flat/typescript"],
+  ...nx.configs["flat/javascript"],
+
+  // Workspace rules
   {
     files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
     rules: {
@@ -25,18 +31,7 @@ export default [
       ],
     },
   },
-  {
-    files: [
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.cts",
-      "**/*.mts",
-      "**/*.js",
-      "**/*.jsx",
-      "**/*.cjs",
-      "**/*.mjs",
-    ],
-    // Override or add rules here
-    rules: {},
-  },
+
+  // Disable layout/formatting rules that conflict with Prettier (must be last)
+  eslintConfigPrettier,
 ];

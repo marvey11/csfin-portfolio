@@ -16,11 +16,6 @@
     }
   },
   "dependencies": {
-    "@csfin-portfolio/core": "*",
-    "papaparse": "^5.5.3",
-    "tslib": "^2.3.0"
-  },
-  "devDependencies": {
-    "@types/papaparse": "^5.3.16"
+    "@csfin-portfolio/core": "*"
   }
 }
