@@ -2,9 +2,9 @@ import nx from "@nx/eslint-plugin";
 import eslintConfigPrettier from "eslint-config-prettier";
 
 export default [
-  // Global ignores
+  // Global ignores: Ignore build output, configs, and package manifests
   {
-    ignores: ["**/dist", "jest.config.ts"],
+    ignores: ["**/dist", "jest.config.cjs", "**/*.json"],
   },
 
   // Nx flat configs
@@ -12,7 +12,7 @@ export default [
   ...nx.configs["flat/typescript"],
   ...nx.configs["flat/javascript"],
 
-  // Workspace rules
+  // Workspace rules for JS/TS
   {
     files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
     rules: {
@@ -32,6 +32,6 @@ export default [
     },
   },
 
-  // Disable layout/formatting rules that conflict with Prettier (must be last)
+  // Prettier config must remain last
   eslintConfigPrettier,
 ];
