@@ -5,16 +5,25 @@ updates:
     schedule:
       interval: "weekly"
     groups:
+      nx-packages:
+        patterns:
+          - "nx"
+          - "@nx/*"
+
       dev-dependencies:
         dependency-type: "development"
-        # Optional: restrict to minor/patch updates to avoid unexpected major breaking changes in one PR
+        exclude-patterns:
+          - "nx"
+          - "@nx/*"
         update-types:
           - "minor"
           - "patch"
 
-      # Optional: create a separate group for production dependencies
       prod-dependencies:
         dependency-type: "production"
+        exclude-patterns:
+          - "nx"
+          - "@nx/*"
         update-types:
           - "minor"
           - "patch"
